@@ -1,0 +1,338 @@
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { apiRequest } from '@/lib/api-client'
+import { useDebounce } from '@/hooks/useDebounce'
+import { requireBusinessId, useCurrentBusinessId } from './business'
+import { asRecord, at, listFrom, num, str } from './http'
+import { queryKeys } from './query-keys'
+
+/**
+ * Customers, same backend and payloads as sink-inventory:
+ *  GET    customer/{business_id}/?search&status&page&limit → { total, pages, results: { data: Customer[], customer_count, total_spend, total_wallet, total_debt, … } }
+ *  POST   customer/{business_id}/      { name, phone, email?, gender?, date_of_birth?, address? }
+ *  GET    customer/single/{id}/        → { identity, purchase_behaviour, financial_details, …, data: Customer }
+ *  PATCH  customer/single/{id}/        same fields plus birthday; null clears gender and birthday
+ *  DELETE customer/single/{id}/
+ *  GET    customer/transactions/{id}/?page&limit&type → { summary, total, pages, results }
+ */
+
+export const CUSTOMERS_PAGE_SIZE = 20
+
+/** Sink's status filter (query param `status`). */
+export const CUSTOMER_STATUS_OPTIONS = [
+  { value: '', label: 'All customers' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'NEW', label: 'New' },
+  { value: 'MOST_ACTIVE', label: 'Most active' },
+  { value: 'LEAST_ACTIVE', label: 'Least active' },
+  { value: 'AT_RISK', label: 'At risk' },
+  { value: 'INACTIVE', label: 'Inactive' },
+  { value: 'DEBTS', label: 'Owing' },
+] as const
+
+export type CustomerStatusFilter = typeof CUSTOMER_STATUS_OPTIONS[number]['value']
+
+export type CustomerAddress = { address: string; city: string; state: string; country: string; phone: string; isDefault: boolean }
+
+export type Customer = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  code: string
+  totalSpent: number
+  ordersCount: number
+  walletBalance: number
+  creditBalance: number
+  status: string
+  tier: string
+  /** The loyalty card code (LOY-…), when they are in a programme. */
+  loyaltyCode: string
+  rewardCount: number
+  segment: string
+  gender: string
+  /** "YYYY-MM-DD", or "MM-DD" when no year was given. */
+  dateOfBirth: string
+  lastVisit: string
+  /** The default address, or null when none is on file. */
+  address: CustomerAddress | null
+}
+
+export type CustomersSummary = { count: number; totalSpend: number; totalWallet: number; totalDebt: number }
+export type CustomersResult = { customers: Customer[]; total: number; pages: number; summary: CustomersSummary }
+
+export type CustomerInput = {
+  name: string
+  phone: string
+  email?: string
+  gender?: string
+  dateOfBirth?: string
+  address?: CustomerAddress
+}
+
+// ─── Mapping ────────────────────────────────────────────────────────────────
+
+const mapAddress = (value: unknown): CustomerAddress => {
+  const record = asRecord(value)
+  return { address: str(record.address), city: str(record.city), state: str(record.state), country: str(record.country), phone: str(record.phone), isDefault: record.is_default === true }
+}
+
+const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Active', NEW: 'New', AT_RISK: 'At Risk', INACTIVE: 'Inactive' }
+
+export const mapCustomer = (value: unknown): Customer => {
+  const record = asRecord(value)
+  const addresses = Array.isArray(record.addresses) ? record.addresses.map(mapAddress) : []
+  const status = str(record.status)
+  return {
+    id: str(record.id),
+    name: str(record.name),
+    email: str(record.email),
+    phone: str(record.phone),
+    code: str(record.customer_code),
+    totalSpent: num(record.lifetime_value ?? record.total_sales ?? record.total_spent),
+    ordersCount: num(record.sales_count ?? record.visits),
+    walletBalance: num(record.wallet_balance ?? record.wallet),
+    creditBalance: num(record.credit_balance),
+    status: STATUS_LABELS[status.toUpperCase()] ?? status,
+    tier: str(record.tier_name),
+    loyaltyCode: str(record.loyalty_code),
+    rewardCount: num(record.reward_count),
+    segment: str(record.segment),
+    gender: str(record.gender),
+    dateOfBirth: str(record.date_of_birth) || str(record.birthday),
+    lastVisit: str(record.last_visit),
+    address: addresses.find(item => item.isDefault) ?? addresses[0] ?? null,
+  }
+}
+
+/** Sink's nested address. A phone is only sent when editing. */
+const toAddressBody = (address: CustomerAddress, isEdit: boolean) => ({
+  address: address.address,
+  city: address.city || undefined,
+  state: address.state || undefined,
+  country: address.country || 'Nigeria',
+  ...(isEdit ? { phone: address.phone || null } : {}),
+  is_default: address.isDefault,
+})
+
+// ─── List ───────────────────────────────────────────────────────────────────
+
+type ListParams = { page: number; limit: number; search: string; status: string; startDate?: string; endDate?: string }
+
+const summaryFrom = (results: unknown, customers: Customer[], total: number): CustomersSummary => {
+  const record = asRecord(results)
+  return {
+    count: num(record.customer_count) || total,
+    totalSpend: num(record.total_spend) || customers.reduce((sum, customer) => sum + customer.totalSpent, 0),
+    totalWallet: num(record.total_wallet),
+    totalDebt: num(record.total_debt),
+  }
+}
+
+const getCustomers = async (businessId: string | null, { page, limit, search, status, startDate, endDate }: ListParams): Promise<CustomersResult> => {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) })
+  if (search) params.set('search', search)
+  if (status) params.set('status', status)
+  if (startDate) params.set('start_date', startDate)
+  if (endDate) params.set('end_date', endDate)
+  const response = await apiRequest<unknown>(`customer/${businessId}/?${params.toString()}`)
+  const customers = listFrom(response, ['results.data', 'data.results.data', 'results', 'data']).map(mapCustomer)
+  const total = num(at(response, 'total')) || num(at(response, 'results.customer_count')) || customers.length
+  return { customers, total, pages: Math.max(1, num(at(response, 'pages')) || Math.ceil(total / limit)), summary: summaryFrom(at(response, 'results'), customers, total) }
+}
+
+/** Server-paged customer list with search and status filter. Reusable anywhere a customer list is needed. */
+export const useCustomers = ({ page = 1, limit = CUSTOMERS_PAGE_SIZE, search = '', status = '', startDate = '', endDate = '', enabled = true }: { page?: number; limit?: number; search?: string; status?: string; startDate?: string; endDate?: string; enabled?: boolean } = {}) => {
+  const { businessId } = useCurrentBusinessId()
+  const params = { page, limit, search, status, startDate, endDate }
+  return useQuery({
+    queryKey: [...queryKeys.customers, 'list', businessId, params],
+    queryFn: () => getCustomers(businessId, params),
+    enabled: enabled && (Boolean(businessId)),
+    placeholderData: keepPreviousData,
+  })
+}
+
+/**
+ * Type-ahead customer search for pickers (e.g. an invoice's contact). Debounced,
+ * and, as in sink, only searches from three characters; shorter input lists the
+ * first page so the picker is never empty.
+ */
+export const useCustomerSearch = (input: string, { limit = 10, enabled = true }: { limit?: number; enabled?: boolean } = {}) => {
+  const debounced = useDebounce(input.trim(), 400)
+  const search = debounced.length >= 3 ? debounced : ''
+  const query = useCustomers({ page: 1, limit, search, enabled })
+  return { customers: query.data?.customers ?? [], isLoading: query.isLoading, isFetching: query.isFetching, isError: query.isError, search }
+}
+
+// ─── Detail ─────────────────────────────────────────────────────────────────
+
+export type CustomerDetail = {
+  customer: Customer
+  customerSince: string
+  totalOrders: number
+  totalSpend: number
+  averageBasket: number
+  lastPurchase: string
+  favouriteProduct: string
+  preferredPayment: string
+  walletBalance: number
+  outstandingBalance: number
+  segment: string
+  tier: string
+  insight: string
+}
+
+const mapDetail = (response: unknown): CustomerDetail => {
+  const outer = asRecord(response)
+  // Answered either bare or inside { success, data, message }.
+  const inner = asRecord(outer.data)
+  const root = outer.identity ? outer : inner.identity ? inner : outer
+  const identity = asRecord(root.identity)
+  const purchase = asRecord(root.purchase_behaviour)
+  const financial = asRecord(root.financial_details)
+  const loyalty = asRecord(root.loyalty_rewards)
+  const row = asRecord(asRecord(root.data).id ? root.data : inner.id ? inner : root)
+  const base = mapCustomer(row)
+  // The top-level sections carry the real figures; the nested row can lag (sink's customerDetail.ts).
+  const customer: Customer = {
+    ...base,
+    name: str(identity.name) || base.name,
+    phone: str(identity.phone) || base.phone,
+    email: str(identity.email) || base.email,
+    gender: str(identity.gender) || base.gender,
+    dateOfBirth: str(identity.date_of_birth) || base.dateOfBirth,
+  }
+  return {
+    customer,
+    customerSince: str(identity.customer_since),
+    totalOrders: num(purchase.total_orders ?? financial.total_orders) || base.ordersCount,
+    totalSpend: num(purchase.total_spend ?? financial.total_lifetime_spend) || base.totalSpent,
+    averageBasket: num(purchase.average_basket_size ?? financial.avg_basket_size),
+    lastPurchase: str(purchase.last_purchase_date),
+    favouriteProduct: str(purchase.favourite_product),
+    preferredPayment: str(purchase.preferred_payment),
+    walletBalance: num(financial.wallet_balance) || base.walletBalance,
+    outstandingBalance: num(financial.outstanding_balance ?? financial.credit_balance) || base.creditBalance,
+    segment: str(identity.segment) || str(row.segment),
+    tier: str(loyalty.loyalty_tier) || base.tier,
+    insight: str(root.ai_customer_insight),
+  }
+}
+
+const getCustomer = async (id: string) => {
+  return mapDetail(await apiRequest<unknown>(`customer/single/${id}/`))
+}
+
+export const useCustomer = (id: string | undefined) => useQuery({
+  queryKey: [...queryKeys.customers, 'detail', id],
+  queryFn: () => getCustomer(id as string),
+  enabled: Boolean(id),
+})
+
+// ─── Transactions ledger ────────────────────────────────────────────────────
+
+export const CUSTOMER_TRANSACTION_TYPES = [
+  { value: 'ALL', label: 'All' },
+  { value: 'PURCHASE', label: 'Purchases' },
+  { value: 'WALLET', label: 'Wallet' },
+  { value: 'DEBT', label: 'Debt' },
+  { value: 'LOYALTY', label: 'Loyalty' },
+  { value: 'REFERRAL', label: 'Referral' },
+] as const
+export type CustomerTransactionType = typeof CUSTOMER_TRANSACTION_TYPES[number]['value']
+
+export type CustomerTransaction = {
+  id: string
+  type: string
+  title: string
+  reference: string
+  amount: number
+  flow: 'INFLOW' | 'OUTFLOW'
+  paymentMethod: string
+  status: string
+  attendant: string
+  createdAt: string
+}
+
+const mapTransaction = (value: unknown, index: number): CustomerTransaction => {
+  const record = asRecord(value)
+  return {
+    id: str(record.id) || `trx-${index}`,
+    type: str(record.type).toUpperCase(),
+    title: str(record.title) || str(record.type),
+    reference: str(record.reference),
+    amount: num(record.amount),
+    flow: str(record.flow).toUpperCase() === 'INFLOW' ? 'INFLOW' : 'OUTFLOW',
+    paymentMethod: str(record.payment_method),
+    status: str(record.status),
+    attendant: str(record.attendant),
+    createdAt: str(record.created_at),
+  }
+}
+
+type TransactionsParams = { page: number; limit: number; type: CustomerTransactionType }
+
+const getCustomerTransactions = async (id: string, { page, limit, type }: TransactionsParams) => {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit), type })
+  const response = asRecord(await apiRequest<unknown>(`customer/transactions/${id}/?${params.toString()}`))
+  const data = response.results ? response : asRecord(response.data)
+  return { rows: listFrom(data.results, []).map(mapTransaction), pages: Math.max(1, num(data.pages)), total: num(data.total) }
+}
+
+export const useCustomerTransactions = (id: string | undefined, params: TransactionsParams) => useQuery({
+  queryKey: [...queryKeys.customers, 'transactions', id, params],
+  queryFn: () => getCustomerTransactions(id as string, params),
+  enabled: Boolean(id),
+  placeholderData: keepPreviousData,
+})
+
+// ─── Writes ─────────────────────────────────────────────────────────────────
+
+const createCustomer = async (input: CustomerInput): Promise<Customer> => {
+  // Unanswered fields are left out: the serializer rejects "" for a choice field.
+  const body = {
+    name: input.name,
+    phone: input.phone,
+    ...(input.email ? { email: input.email } : {}),
+    ...(input.gender ? { gender: input.gender } : {}),
+    ...(input.dateOfBirth ? { date_of_birth: input.dateOfBirth } : {}),
+    ...(input.address ? { address: toAddressBody(input.address, false) } : {}),
+  }
+  const response = asRecord(await apiRequest<unknown>(`customer/${requireBusinessId()}/`, { method: 'POST', body }))
+  const data = asRecord(response.data ?? response)
+  const mapped = mapCustomer(asRecord(data.customer).id ? data.customer : data)
+  return { ...mapped, name: mapped.name || input.name, phone: mapped.phone || input.phone }
+}
+
+const updateCustomer = async ({ id, input }: { id: string; input: CustomerInput }) => {
+  return apiRequest<unknown>(`customer/single/${id}/`, { method: 'PATCH', body: {
+    name: input.name,
+    phone: input.phone,
+    email: input.email ?? '',
+    gender: input.gender || null,
+    date_of_birth: input.dateOfBirth || null,
+    birthday: input.dateOfBirth || null,
+    ...(input.address ? { address: toAddressBody(input.address, true) } : {}),
+  } })
+}
+
+const deleteCustomer = async (id: string) => {
+  return apiRequest<unknown>(`customer/single/${id}/`, { method: 'DELETE' })
+}
+
+const useInvalidateCustomers = () => {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: queryKeys.customers })
+}
+
+export const useCreateCustomer = () => useMutation({ mutationFn: createCustomer, onSuccess: useInvalidateCustomers() })
+export const useUpdateCustomer = () => useMutation({ mutationFn: updateCustomer, onSuccess: useInvalidateCustomers() })
+
+export const useDeleteCustomer = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteCustomer,
+    // Only the lists: refetching the deleted customer's own profile would just 404.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...queryKeys.customers, 'list'] }),
+  })
+}
