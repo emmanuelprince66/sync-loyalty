@@ -45,7 +45,7 @@ export default function CustomerWalletPage() {
   const first = w.wallet?.name.split(' ')[0] || w.customer?.name.split(' ')[0]
 
   return <div className="space-y-5">
-    <PageHeading badge="CUSTOMER VIEW" title="See what your customers see." subtitle="Select a customer to preview the wallet on their phone, then share their card link." actions={<MkButton onClick={w.openSheet}><Users size={14}/>Select customer</MkButton>}/>
+    <PageHeading badge="CUSTOMER VIEW" title="See what your customers see." subtitle="Select a customer to preview the wallet on their phone, then share their card link."/>
 
     {/* The selected customer, as sink's CustomerBar */}
     <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
@@ -54,13 +54,13 @@ export default function CustomerWalletPage() {
         : <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-full bg-[#F0F0EC]"><UserRound size={17}/></span><div><b className="block text-sm">No customer selected</b><span className="text-[11px] text-black/45">Pick one to see their card</span></div></div>}
       <div className="flex gap-2">
         {w.wallet && <MkButton secondary onClick={w.copyLink}><Copy size={14}/>{w.copied ? 'Copied' : 'Copy card link'}</MkButton>}
-        <MkButton secondary onClick={w.openSheet}>{w.customer ? 'Change' : 'Select customer'}</MkButton>
+        <MkButton secondary={Boolean(w.customer)} onClick={w.openSheet}><Users size={14}/>{w.customer ? 'Change' : 'Select customer'}</MkButton>
       </div>
     </Card>
 
     {/* The member's phone */}
     <Card className="grid place-items-center bg-[#EDEDE8] p-5 sm:p-8">
-      {!w.customer ? <EmptyBlock title="Choose a customer" text="Their loyalty card, progress and rewards will show here exactly as they see it." action={<MkButton onClick={w.openSheet}><Users size={14}/>Select customer</MkButton>}/>
+      {!w.customer ? <EmptyBlock title="Choose a customer" text="Use Select customer above. Their loyalty card, progress and rewards will show here exactly as they see it."/>
         : !w.code ? <EmptyBlock title={`${w.customer.name} isn’t a loyalty member yet`} text="Share a program’s join QR with them, or pick another customer." action={<MkButton secondary onClick={w.openSheet}>Pick another</MkButton>}/>
           : <div className="w-full max-w-[360px]">
             <div className="rounded-[44px] border-[10px] border-black bg-[#F6F6F2] shadow-[0_30px_60px_rgba(0,0,0,.18)]">

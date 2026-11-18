@@ -141,7 +141,7 @@ export function useCreateLoyalty() {
     if (at === 2) {
       if (mode !== 'SPEND' && !(Number(visits) >= 1)) return 'Enter how many visits it takes.'
       if (mode !== 'VISIT' && !(Number(spend) > 0)) return 'Enter the spend target.'
-      if (needsItem && !rewardItem) return `Pick the ${rewardType === 'FREE_ITEM' ? 'product' : 'service'} customers get for free.`
+      if (needsItem && !rewardItem) return `Pick or type the ${rewardType === 'FREE_ITEM' ? 'product' : 'service'} customers get for free.`
       if (!needsItem && !(Number(rewardValue) > 0)) return 'Enter the reward value.'
       if (rewardType === 'PERCENTAGE' && Number(rewardValue) > 100) return 'A discount can’t be more than 100%.'
     }
@@ -160,7 +160,7 @@ export function useCreateLoyalty() {
     }
     const input: ProgramInput = {
       name, description, ruleMode: mode, visits: Number(visits) || 1, spendTarget: spend, minSpendPerVisit: minSpend,
-      completionWindowDays: days > 0 ? days : null, visitWindowHours: hours, rewardType, rewardValue: needsItem ? '' : rewardValue, rewardItemId: rewardItem?.id ?? '',
+      completionWindowDays: days > 0 ? days : null, visitWindowHours: hours, rewardType, rewardValue: needsItem ? '' : rewardValue, rewardItemId: rewardItem?.id ?? '', rewardDescription: needsItem && rewardItem ? `Free ${rewardItem.name}` : '',
       rewardStyle, timeoutAction, channel,
       notifyWelcome: notify.welcome, notifyProgress: notify.progress, notifyRewardReady: notify.rewardReady, notifyExpiry: notify.expiry,
     }
@@ -195,6 +195,8 @@ export function useCreateLoyalty() {
     rewardType, setRewardType: (value: RewardType) => { setRewardType(value); setRewardItem(null); setRewardValue(''); setError('') },
     rewardValue, setRewardValue, needsItem,
     rewardItem, pickItem: (item: { id: string; name: string }) => { setRewardItem(item); setError('') },
+    /** For a business with no inventory: the item is just its name (sent as reward_description). */
+    useTypedItem: () => { const name = itemSearch.trim(); if (name) { setRewardItem({ id: '', name }); setError('') } },
     itemSearch, setItemSearch, items: items.data ?? [], itemsLoading: items.isLoading,
     timeLimit, setTimeLimit, customDays, setCustomDays,
     visitWindow, setVisitWindow, customHours, setCustomHours,

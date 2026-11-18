@@ -280,8 +280,10 @@ export type ProgramInput = {
   visitWindowHours: number
   rewardType: RewardType
   rewardValue: string
-  /** The product or service given away, for FREE_ITEM / FREE_SERVICE (sink's reward_product / reward_service). */
+  /** The product or service given away, for FREE_ITEM / FREE_SERVICE (sink's reward_product / reward_service). Empty when typed. */
   rewardItemId: string
+  /** The giveaway in words (sink's reward_description), e.g. a typed item for a business with no inventory. */
+  rewardDescription: string
   rewardStyle: 'CONTINUOUS' | 'ONE_TIME'
   timeoutAction: 'RESTART' | 'PAUSE' | 'EXPIRE'
   channel: 'SMS' | 'EMAIL' | 'BOTH'
@@ -306,8 +308,9 @@ export const toProgramPayload = (input: ProgramInput) => {
     status: 'ACTIVE',
     reward_type: input.rewardType,
     reward_value: input.rewardValue.trim() || undefined,
-    reward_product: input.rewardType === 'FREE_ITEM' ? input.rewardItemId : undefined,
-    reward_service: input.rewardType === 'FREE_SERVICE' ? input.rewardItemId : undefined,
+    reward_product: input.rewardType === 'FREE_ITEM' && input.rewardItemId ? input.rewardItemId : undefined,
+    reward_service: input.rewardType === 'FREE_SERVICE' && input.rewardItemId ? input.rewardItemId : undefined,
+    reward_description: input.rewardDescription.trim() || undefined,
     communication_channel: input.channel,
     reward_style: input.rewardStyle,
     completion_window_days: input.completionWindowDays && input.completionWindowDays > 0 ? input.completionWindowDays : null,
