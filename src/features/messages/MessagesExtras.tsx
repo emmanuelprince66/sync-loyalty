@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { Check, PenLine, Plus, Search, Trash2, Users, X } from 'lucide-react'
+import { AlertTriangle, Check, PenLine, Plus, Search, Trash2, Users, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
 import { useAudiences, useDeleteCampaign, useDeleteGroup, useSaveGroup, useSaveSenderId, useSenderId, useUpdateCampaign, type Campaign, type Group } from '@/api/campaigns'
 import { useCustomerSearch } from '@/api/customers'
+import { asRecord, str } from '@/api/http'
 import { Badge, Card, EmptyBlock, MkButton, inputClass, labelClass } from '@/components/ui/mk'
 import { cn } from '@/lib/cn'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
@@ -106,22 +107,71 @@ export function CampaignActions({ campaign }: { campaign: Campaign }) {
   </>
 }
 
-// ─── Sender ID ────────────────────────────────────────────────────────────
+// ─── Sender ID (sink: Campaign › Sender ID Required + AddSenderId) ─────────
 
-/** sink's Add Sender ID: the name SMS arrive from. Up to 11 letters or numbers. */
-export function SenderIdCard({ canManage }: { canManage: boolean }) {
+/**
+ * sink's flow: a business with no sender ID is told so as soon as it opens Messages (approval takes up
+ * to 5 business days), and Set up opens the Add Sender ID form (POST campaign/sender_id/{business_id}/).
+ * Until it's approved, messages go out under the business name.
+ */
+export function useSenderIdFlow(canManage: boolean) {
   const sender = useSenderId()
-  const save = useSaveSenderId()
-  const [value, setValue] = useState('')
-  const [open, setOpen] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
   const current = sender.data ?? ''
+  return {
+    current,
+    loading: sender.isLoading,
+    canManage,
+    requiredOpen: canManage && sender.isSuccess && !current && !dismissed && !dialogOpen,
+    dismissRequired: () => setDismissed(true),
+    dialogOpen,
+    openDialog: () => { setDismissed(true); setDialogOpen(true) },
+    closeDialog: () => setDialogOpen(false),
+  }
+}
+export type SenderIdFlow = ReturnType<typeof useSenderIdFlow>
+
+function SenderIdRequired({ flow }: { flow: SenderIdFlow }) {
+  return <Sheet kicker="Messages" title="Sender ID required" onClose={flow.dismissRequired} footer={<><MkButton secondary onClick={flow.dismissRequired}>Later</MkButton><MkButton onClick={flow.openDialog}>Set up sender ID</MkButton></>}>
+    <div className="space-y-4">
+      <div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#FF6B3D]/15 text-[#B43A16]"><AlertTriangle size={18}/></span><div><p className="text-sm font-black">No sender ID configured</p><p className="mt-1 text-xs leading-relaxed text-black/55">Your business needs a sender ID to send messages. It’s the name your customers see when your SMS arrive.</p></div></div>
+      <div className="border border-[#52D6FF]/50 bg-[#52D6FF]/15 p-4 text-xs"><b>Approval takes up to 5 business days.</b> We recommend setting it up now.</div>
+    </div>
+  </Sheet>
+}
+
+function SenderIdDialog({ flow }: { flow: SenderIdFlow }) {
+  const save = useSaveSenderId()
+  const [value, setValue] = useState(flow.current)
+  const submit = () => {
+    if (value.length < 3) return toast.error('Use 3 to 11 letters or numbers.')
+    save.mutate(value, {
+      onSuccess: response => { toast.success(str(asRecord(response).message) || 'Sender ID submitted for approval'); flow.closeDialog() },
+      onError: error => toast.error(errorMessage(error, 'Could not save the sender ID.')),
+    })
+  }
+  return <Sheet kicker="Messages" title={flow.current ? 'Change sender ID' : 'Add a sender ID'} onClose={flow.closeDialog} footer={<><MkButton secondary onClick={flow.closeDialog}>Cancel</MkButton><MkButton onClick={submit} loading={save.isPending}>{flow.current ? 'Save sender ID' : 'Add sender ID'}</MkButton></>}>
+    <form onSubmit={event => { event.preventDefault(); submit() }} className="space-y-4">
+      <label className="block"><span className={labelClass}>Sender ID</span><input autoFocus value={value} maxLength={11} onChange={event => setValue(event.target.value.replace(/[^a-zA-Z0-9]/g, ''))} placeholder="e.g. MAHELE" className={cn(inputClass, 'mt-2 h-12 text-sm font-black uppercase tracking-wider')}/></label>
+      <p className="text-[11px] leading-relaxed text-black/50">3 to 11 letters or numbers, no spaces, usually your business name. It shows as the sender on your customers’ phones once approved (up to 5 business days).</p>
+      <div className="rounded-[20px] bg-black p-3"><div className="rounded-[14px] bg-[#F1F1ED] p-3"><b className="text-[11px]">{value || 'YOUR NAME'}</b><p className="mt-1 text-[10px] text-black/55">Hi Amara, your next visit unlocks a free reward…</p></div></div>
+    </form>
+  </Sheet>
+}
+
+/** Mount once on the Messages page: the required prompt and the form. */
+export function SenderIdModals({ flow }: { flow: SenderIdFlow }) {
+  return <>
+    {flow.requiredOpen && <SenderIdRequired flow={flow}/>}
+    {flow.dialogOpen && <SenderIdDialog flow={flow}/>}
+  </>
+}
+
+/** The Credits tab card: current sender ID and its status. */
+export function SenderIdCard({ flow }: { flow: SenderIdFlow }) {
   return <Card className="p-5">
-    <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-wider text-black/40">SMS sender ID</p><p className="mt-2 text-xl font-black tracking-[-.03em]">{sender.isLoading ? '—' : current || 'Not set'}</p><p className="mt-1 text-[11px] text-black/45">The name your SMS arrive from.</p></div>{current ? <Badge>Active</Badge> : <Badge tone="orange">Needed</Badge>}</div>
-    {canManage && (open
-      ? <div className="mt-4 flex gap-2"><input value={value} maxLength={11} onChange={event => setValue(event.target.value.replace(/[^a-zA-Z0-9]/g, ''))} placeholder="e.g. MAHELE" className={inputClass} aria-label="Sender ID"/><MkButton loading={save.isPending} onClick={() => {
-        if (value.length < 3) return toast.error('Use 3 to 11 letters or numbers.')
-        save.mutate(value, { onSuccess: () => { toast.success('Sender ID submitted'); setOpen(false) }, onError: error => toast.error(errorMessage(error, 'Could not save the sender ID.')) })
-      }}>Save</MkButton></div>
-      : <MkButton secondary className="mt-4" onClick={() => { setValue(current); setOpen(true) }}>{current ? 'Change sender ID' : 'Add sender ID'}</MkButton>)}
+    <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-wider text-black/40">SMS sender ID</p><p className="mt-2 text-xl font-black tracking-[-.03em]">{flow.loading ? '—' : flow.current || 'Not set'}</p><p className="mt-1 text-[11px] text-black/45">The name your SMS arrive from. Approval takes up to 5 business days.</p></div>{flow.current ? <Badge>Active</Badge> : <Badge tone="orange">Needed</Badge>}</div>
+    {flow.canManage && <MkButton secondary className="mt-4" onClick={flow.openDialog}>{flow.current ? 'Change sender ID' : 'Add sender ID'}</MkButton>}
   </Card>
 }

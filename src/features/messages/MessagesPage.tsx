@@ -5,14 +5,16 @@ import { NAIRA_PER_UNIT } from '@/api/campaigns'
 import { formatActivityDate } from '@/api/http'
 import { Badge, Card, EmptyBlock, Metric, MkButton, PageHeading, Tabs, inputClass, labelClass } from '@/components/ui/mk'
 import { cn } from '@/lib/cn'
-import { CampaignActions, GroupsTab, SenderIdCard } from './MessagesExtras'
+import { CampaignActions, GroupsTab, SenderIdCard, SenderIdModals, useSenderIdFlow, type SenderIdFlow } from './MessagesExtras'
 import { PLACEHOLDERS, TEMPLATES, useMessages, type MessagesModel, type MessagesTab } from './hooks/useMessages'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
 
 /** sink's FundMessageCredits presets. */
 const PRESETS = [1000, 5000, 10000, 25000, 50000]
 
-function Compose({ m }: { m: MessagesModel }) {
+function Compose({ m, sender }: { m: MessagesModel; sender: SenderIdFlow }) {
+  // sink's ComposeCampaign: the sender is the approved sender ID, else the business name.
+  const senderName = sender.current || m.businessName
   return <div className="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
     <Card className="p-5 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[9px] font-extrabold uppercase tracking-[.15em] text-black/40">Create outreach</p><h3 className="mt-1 text-lg font-black">Write your message</h3></div>
@@ -20,6 +22,10 @@ function Compose({ m }: { m: MessagesModel }) {
       </div>
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
         <div className="space-y-4">
+          <div><span className={labelClass}>Sender</span>
+            <div className="mt-2 flex h-12 items-center justify-between gap-2 border border-black/15 bg-[#FAFAF7] pl-3 pr-1.5"><span className="min-w-0 truncate text-xs font-black">{senderName}</span>{sender.canManage && <button type="button" onClick={sender.openDialog} className="shrink-0 rounded-full border border-black/15 bg-white px-3 py-1.5 text-[10px] font-extrabold hover:border-black">{sender.current ? 'Change' : 'Set up sender ID'}</button>}</div>
+            <span className="mt-1.5 block text-[10px] text-black/40">{m.channel === 'EMAIL' ? 'Displayed as the sender in the recipient’s inbox' : sender.current ? 'This is what recipients see as the sender' : 'No sender ID yet: messages go out under your business name'}</span>
+          </div>
           <label className="block"><span className={labelClass}>Name (only you see it)</span><input value={m.name} onChange={event => m.setName(event.target.value)} placeholder="e.g. November promo" className={cn(inputClass, 'mt-2 h-12 font-bold')}/></label>
           <label className="block"><span className={labelClass}>Send to</span>
             <select value={m.audience} onChange={event => m.setAudience(event.target.value)} className="mt-2 h-12 w-full border border-black/15 bg-white px-3 text-xs font-bold">{m.audienceOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
@@ -44,7 +50,7 @@ function Compose({ m }: { m: MessagesModel }) {
       <Card className="bg-black p-5 text-white">
         <p className="text-[9px] font-extrabold uppercase tracking-[.15em] text-white/40">{m.channel === 'EMAIL' ? 'Email' : 'SMS'} preview</p>
         {m.channel === 'SMS'
-          ? <div className="mt-5 rounded-[24px] bg-white p-3 text-black"><div className="rounded-[18px] bg-[#F1F1ED] p-4"><b className="text-[10px]">{m.businessName}</b><p className="mt-3 whitespace-pre-wrap text-[10px] leading-relaxed">{m.preview}</p></div></div>
+          ? <div className="mt-5 rounded-[24px] bg-white p-3 text-black"><div className="rounded-[18px] bg-[#F1F1ED] p-4"><b className="text-[10px]">{senderName}</b><p className="mt-3 whitespace-pre-wrap text-[10px] leading-relaxed">{m.preview}</p></div></div>
           : <div className="mt-5 overflow-hidden bg-white text-black"><div className="bg-[#D7FF45] p-5"><h4 className="text-xl font-black leading-tight tracking-[-.04em]">{m.subject || 'Your subject line'}</h4></div><div className="p-5"><p className="whitespace-pre-wrap text-[10px] leading-relaxed">{m.preview}</p></div></div>}
       </Card>
       <Card className="p-5"><p className="text-[9px] font-extrabold uppercase tracking-wider text-black/40">Credit balance</p><p className="mt-2 text-3xl font-black tracking-[-.05em]">{m.creditsLoading ? '—' : m.balance.toLocaleString()}</p>{m.canBuy && <button type="button" onClick={m.openBuy} className="mt-4 text-xs font-black">Buy more credits →</button>}</Card>
@@ -140,6 +146,7 @@ const TABS: { value: MessagesTab; label: string }[] = [
 
 export default function MessagesPage() {
   const m = useMessages()
+  const sender = useSenderIdFlow(m.canSend)
   const live = m.automationRows.filter(row => row.active).length
   return <div className="space-y-5">
     <PageHeading badge="OUTREACH" title="Messages that bring people back." subtitle="Send targeted SMS and email campaigns, or let automations do the work." actions={<>
@@ -152,12 +159,13 @@ export default function MessagesPage() {
       <Metric label="Messages sent" value={m.campaignsLoading ? '—' : m.campaigns.length.toLocaleString()} detail={live ? `${live} automations live` : ''} icon={Eye}/>
     </div>
     <Tabs options={TABS.map(item => ({ value: item.value, label: item.value === 'automations' && live ? <>{item.label}<span className="ml-2 rounded-full bg-[#D7FF45] px-2 py-0.5 text-[8px] text-black">{live} LIVE</span></> : item.label }))} value={m.tab} onChange={m.setTab}/>
-    {m.tab === 'compose' && <Compose m={m}/>}
+    {m.tab === 'compose' && <Compose m={m} sender={sender}/>}
     {m.tab === 'campaigns' && <Campaigns m={m}/>}
     {m.tab === 'groups' && <GroupsTab canManage={m.canSend}/>}
     {m.tab === 'automations' && <Automations m={m}/>}
-    {m.tab === 'credits' && <div className="space-y-5"><Credits m={m}/><SenderIdCard canManage={m.canSend}/></div>}
+    {m.tab === 'credits' && <div className="space-y-5"><Credits m={m}/><SenderIdCard flow={sender}/></div>}
     <BuyCreditsModal m={m}/>
+    <SenderIdModals flow={sender}/>
     <AutomationEditor m={m}/>
   </div>
 }
