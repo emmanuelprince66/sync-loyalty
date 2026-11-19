@@ -15,7 +15,7 @@ export function EditProgramModal({ page }: { page: ProgramDetailModel }) {
     ['notifyWelcome', 'Welcome message'], ['notifyProgress', 'Progress updates'], ['notifyRewardReady', 'Reward ready'], ['notifyExpiry', 'Expiry reminder'],
   ] as const
   return <Dialog.Root open={Boolean(e)} onOpenChange={next => { if (!next) page.closeEdit() }}>
-    <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-0 sm:p-4"><Dialog.Content aria-describedby={undefined} className="max-h-[100dvh] w-full max-w-2xl overflow-y-auto bg-[#F6F6F2] shadow-2xl outline-none sm:max-h-[92vh]">
+    <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"><Dialog.Content aria-describedby={undefined} className="max-h-[92dvh] rounded-t-[24px] sm:rounded-none w-full max-w-2xl overflow-y-auto bg-[#F6F6F2] shadow-2xl outline-none sm:max-h-[92vh]">
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-black/10 bg-[#F6F6F2] px-6 py-4">
         <div><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-black/40">Loyalty program</p><Dialog.Title className="text-xl font-black">Edit program</Dialog.Title></div>
         <button type="button" aria-label="Close" onClick={page.closeEdit} className="grid h-10 w-10 place-items-center rounded-full bg-black text-white"><X size={16}/></button>

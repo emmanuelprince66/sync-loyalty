@@ -8,6 +8,7 @@ import { useClipboard } from '@/hooks/useClipboard'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { usePermissions } from '@/hooks/usePermissions'
 import { joinPath, paths } from '@/routes/paths'
+import { useBusinessDataStore } from '@/stores/business-data-store'
 
 export type DetailTab = 'overview' | 'participants' | 'qr' | 'report'
 export type ParticipantFilter = 'All' | 'Active' | 'Completed' | 'At risk'
@@ -29,6 +30,7 @@ export function useProgramDetail() {
   const remove = useDeleteProgram()
   const { copy, copied } = useClipboard()
   const cardColour = useCardColour()
+  const businessName = useBusinessDataStore(state => state.businessData?.name) || 'Your business'
   const [tab, setTab] = useState<DetailTab>('overview')
   const [filter, setFilter] = useState<ParticipantFilter>('All')
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -54,6 +56,7 @@ export function useProgramDetail() {
     retry: () => { void detail.refetch() },
     program: d?.program,
     colour: cardColour,
+    businessName,
     tab, setTab,
     stats: d ? [
       { label: 'Members', value: d.enrolled.toLocaleString() },

@@ -6,7 +6,7 @@ import { GuestOnly, RequireAuth, RequireBusiness, RequirePage } from './guards'
 import { pages } from './pages'
 import { paths } from './paths'
 
-const { AuthPage, SelectBusinessPage, OverviewPage, LoyaltyPage, ProgramDetailPage, CustomersPage, CustomerDetailPage, ScannerPage, CardStudioPage, MessagesPage, RewardsPage, CustomerWalletPage, SettingsPage, SegmentsPage, InsightsPage, ReferralsPage, ImportCustomersPage, KycPage, JoinPage, MemberCardPage } = pages
+const { AuthPage, SelectBusinessPage, OverviewPage, LoyaltyPage, ProgramDetailPage, CustomersPage, CustomerDetailPage, ScannerPage, CardStudioPage, MessagesPage, RewardsPage, CustomerWalletPage, SettingsPage, SegmentsPage, InsightsPage, ReferralsPage, ReferralProgrammePage, ImportCustomersPage, KycPage, PlanPage, JoinPage, MemberCardPage } = pages
 
 const withLoader = (element: React.ReactNode) => <Suspense fallback={<AppLoader/>}>{element}</Suspense>
 
@@ -48,8 +48,10 @@ export const router = createBrowserRouter([
               { path: paths.segments, element: <SegmentsPage/> },
               { path: paths.insights, element: <InsightsPage/> },
               { path: paths.referrals, element: <ReferralsPage/> },
+              { path: paths.referralProgramme, element: <ReferralProgrammePage/> },
               { path: paths.importCustomers, element: <ImportCustomersPage/> },
               { path: paths.kyc, element: <KycPage/> },
+              { path: paths.plan, element: <PlanPage/> },
             ],
           }],
         }],

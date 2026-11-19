@@ -42,7 +42,7 @@ export default function InsightsPage() {
 
     {insights.isError ? <Card><ErrorBlock text="We couldn’t load your insights." onRetry={() => { void insights.refetch() }}/></Card>
       : <>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {insights.isLoading || !d ? Array.from({ length: 8 }, (_, index) => <CardSkeleton key={index} footer={0} dark={index === 0}/>)
             : d.metrics.map((metric, index) => <MetricTile key={metric.key} metric={metric} money={money} dark={index === 0}/>)}
         </div>

@@ -3,11 +3,12 @@ import { Gift, Percent, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
 import { formatActivityDate } from '@/api/http'
-import { useRedeemReward, useRewards, useRewardsSummary, type RewardStatus } from '@/api/loyalty'
+import { useRedeemReward, useRewards, useRewardsSummary, type LoyaltyReward, type RewardStatus } from '@/api/loyalty'
 import { Badge, Card, Chips, EmptyBlock, ErrorBlock, Metric, MetricSkeleton, MkButton, PageHeading } from '@/components/ui/mk'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { usePermissions } from '@/hooks/usePermissions'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 const FILTERS: { value: RewardStatus | ''; label: string }[] = [
   { value: '', label: 'All' },
@@ -27,6 +28,7 @@ function useRewardsPage() {
   const rewards = useRewards(status)
   const summary = useRewardsSummary()
   const redeem = useRedeemReward()
+  const [pendingRedeem, setPendingRedeem] = useState<LoyaltyReward | null>(null)
   const s = summary.data
   return {
     status, setStatus,
@@ -43,18 +45,22 @@ function useRewardsPage() {
     ] : [],
     canRedeem: canScan,
     redeemingId: redeem.isPending ? redeem.variables?.rewardId ?? '' : '',
-    redeem: (rewardId: string, loyaltyCode: string) => redeem.mutate({ rewardId, loyaltyCode }, {
-      onSuccess: () => toast.success('Reward redeemed'),
+    pendingRedeem,
+    askRedeem: (reward: LoyaltyReward) => setPendingRedeem(reward),
+    cancelRedeem: () => setPendingRedeem(null),
+    confirmRedeem: () => { if (pendingRedeem) redeem.mutate({ rewardId: pendingRedeem.id, loyaltyCode: pendingRedeem.code }, {
+      onSuccess: () => { toast.success('Reward redeemed'); setPendingRedeem(null) },
       onError: error => toast.error(errorMessage(error, 'Could not redeem this reward.')),
-    }),
+    }) },
   }
 }
 
 export default function RewardsPage() {
   const page = useRewardsPage()
+  const pending = page.pendingRedeem
   return <div className="space-y-5">
     <PageHeading title="Reward centre" subtitle="Track unlocked, claimed, and expiring rewards."/>
-    <div className="grid gap-3 sm:grid-cols-3">{page.summaryLoading ? Array.from({ length: 3 }, (_, index) => <MetricSkeleton key={index} dark={index === 0}/>) : page.metrics.map(metric => <Metric key={metric.label} {...metric}/>)}</div>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*:last-child:nth-child(odd)]:col-span-2 sm:[&>*:last-child:nth-child(odd)]:col-span-1">{page.summaryLoading ? Array.from({ length: 3 }, (_, index) => <MetricSkeleton key={index} dark={index === 0}/>) : page.metrics.map(metric => <Metric key={metric.label} {...metric}/>)}</div>
     <Chips options={FILTERS} value={page.status} onChange={page.setStatus}/>
     <Card className="overflow-hidden">
       {page.isError ? <ErrorBlock text="We couldn’t load rewards." onRetry={page.retry}/>
@@ -62,7 +68,7 @@ export default function RewardsPage() {
           : page.rows.length === 0 ? <EmptyBlock title="No rewards here" text="Rewards show up as members complete your programs."/>
             : page.rows.map(reward => <div key={reward.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 p-4 last:border-0">
               <div className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#F0F0EC]"><Gift size={15}/></span><div className="min-w-0"><p className="truncate text-xs font-black">{reward.member} · {reward.value || reward.type}</p><p className="mt-1 truncate text-[9px] text-black/40">{reward.program} · {reward.code} · {formatActivityDate(reward.status === 'REDEEMED' ? reward.redeemedAt : reward.issuedAt)}</p></div></div>
-              <div className="flex items-center gap-3"><Badge tone={tone(reward.status)}>{label(reward.status)}</Badge>{reward.status === 'ISSUED' && page.canRedeem && <MkButton onClick={() => page.redeem(reward.id, reward.code)} loading={page.redeemingId === reward.id}>Redeem</MkButton>}</div>
+              <div className="flex items-center gap-3"><Badge tone={tone(reward.status)}>{label(reward.status)}</Badge>{reward.status === 'ISSUED' && page.canRedeem && <MkButton onClick={() => page.askRedeem(reward)} loading={page.redeemingId === reward.id}>Redeem</MkButton>}</div>
             </div>)}
     </Card>
     {page.programs.length > 0 && <Card className="overflow-hidden">
@@ -76,5 +82,8 @@ export default function RewardsPage() {
         </tr>)}</tbody>
       </table></div>
     </Card>}
+    <ConfirmModal open={Boolean(pending)} onClose={page.cancelRedeem} onConfirm={page.confirmRedeem} loading={Boolean(pending) && page.redeemingId === pending?.id} kicker="Redeem reward" title="Hand over this reward?" confirmLabel="Redeem now">
+      {pending && <>Mark <b className="text-black">{pending.value || pending.type.replace('_', ' ').toLowerCase()}</b> from <b className="text-black">{pending.program}</b> as used for <b className="text-black">{pending.member}</b> ({pending.code}). Do this when you give it to them; it can’t be undone.</>}
+    </ConfirmModal>
   </div>
 }

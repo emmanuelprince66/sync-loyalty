@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
-import { useCreateProgram, useRewardItems, type ProgramInput, type RewardType, type RuleMode } from '@/api/loyalty'
+import { useCreateProgram, useRewardItems, type LoyaltyProgram, type ProgramInput, type RewardType, type RuleMode } from '@/api/loyalty'
 import { useCardColour, useSaveCardColour } from '@/api/storeTheme'
 import { useDebounce } from '@/hooks/useDebounce'
 import { programPath } from '@/routes/paths'
@@ -115,6 +115,8 @@ export function useCreateLoyalty() {
   const [channel, setChannel] = useState<ProgramInput['channel']>('BOTH')
   const [notify, setNotify] = useState(DEFAULT_NOTIFY)
   const [error, setError] = useState('')
+  /** The programme just created: shown with its join card (sink's ProgrammeCreated). */
+  const [created, setCreated] = useState<LoyaltyProgram | null>(null)
 
   const colour = picked ?? storeColour
   const needsItem = rewardType === 'FREE_ITEM' || rewardType === 'FREE_SERVICE'
@@ -169,7 +171,7 @@ export function useCreateLoyalty() {
         if (picked && picked !== storeColour) saveColour.mutate(picked)
         toast.success(`${program.name || 'Your program'} is live`)
         dismiss()
-        if (program.id) navigate(programPath(program.id))
+        if (program.id) setCreated(program)
       },
       onError: failure => setError(errorMessage(failure, 'Could not create the program.')),
     })
@@ -215,6 +217,9 @@ export function useCreateLoyalty() {
       setReached(current => Math.max(current, target))
     },
     publish,
+    created,
+    closeCreated: () => setCreated(null),
+    viewCreated: () => { if (created?.id) navigate(programPath(created.id)); setCreated(null) },
     saving: create.isPending,
     preview: { businessName, initials: businessName.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase(), name: name || 'Your program', line: `${conditionLabel}${windowLabel}. ${rewardLabel}.`, stamps: mode === 'SPEND' ? 5 : Math.min(10, Number(visits) || 5) },
   }

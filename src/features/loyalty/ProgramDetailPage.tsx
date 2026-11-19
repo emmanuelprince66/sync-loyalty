@@ -1,14 +1,15 @@
-import { ArrowLeft, Copy, ExternalLink, Palette, Pause, PenLine, Play, Trash2 } from 'lucide-react'
+import { ArrowLeft, Copy, Palette, Pause, PenLine, Play, Trash2 } from 'lucide-react'
 import { formatActivityDate } from '@/api/http'
 import { Badge, Card, Chips, EmptyBlock, ErrorBlock, MkButton, Tabs, initialsOf } from '@/components/ui/mk'
-import { QrCodeImage } from '@/components/ui/QrCode'
 import { cn } from '@/lib/cn'
 import { BonusPeriods } from './components/BonusPeriods'
+import { JoinQrCard } from './components/JoinQrCard'
 import { EditProgramModal } from './components/EditProgramModal'
 import { statusLabel } from './hooks/useLoyaltyPage'
 import { PARTICIPANT_FILTERS, useProgramDetail, type DetailTab, type ProgramDetailModel } from './hooks/useProgramDetail'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
 import { CardGridSkeleton } from '@/components/ui/CardSkeleton'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 const TABS: { value: DetailTab; label: string }[] = [
   { value: 'overview', label: 'Overview' },
@@ -70,24 +71,23 @@ function Participants({ page }: { page: ProgramDetailModel }) {
 }
 
 function QrPanel({ page }: { page: ProgramDetailModel }) {
-  return <Card className="grid gap-6 p-6 md:grid-cols-[auto_1fr] md:items-center">
-    <div className="grid place-items-center bg-white p-4 ring-1 ring-black/10">
-      {page.qrUrl ? <img src={page.qrUrl} alt="Join QR code" className="h-52 w-52"/> : page.joinUrl ? <QrCodeImage value={page.joinUrl} size={208}/> : <div className="h-52 w-52 animate-pulse bg-[#ECECE8]"/>}
-    </div>
+  const program = page.program
+  return <Card className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,.9fr)] lg:items-start">
+    <JoinQrCard businessName={page.businessName} programName={program?.name ?? ''} rewardSummary={program?.rewardSummary ?? ''} triggerSummary={program?.triggerSummary ?? ''} stamps={program?.visitTarget ?? 0} joinUrl={page.joinUrl} colour={page.colour}/>
     <div className="min-w-0">
       <p className="text-[10px] font-extrabold uppercase tracking-wider text-black/40">Join QR</p>
       <h3 className="mt-2 text-2xl font-black tracking-[-.04em]">Customers scan to join</h3>
-      <p className="mt-2 text-xs text-black/50">Put it at the counter, on receipts or share the link. It opens the join page, and their card is ready straight away.</p>
+      <p className="mt-2 text-xs leading-relaxed text-black/55">Download or print this card and put it at the counter, on tables or on receipts. Scanning opens the join page, and their loyalty card is ready straight away.</p>
       {page.joinUrl && <button type="button" onClick={page.copyLink} className="mt-5 flex w-full items-center justify-between gap-3 border border-black/15 bg-white p-3 text-left text-[11px] font-bold hover:border-black"><span className="truncate">{page.joinUrl}</span><Copy size={14} className="shrink-0"/></button>}
       {page.copied && <p className="mt-2 text-[11px] font-bold text-[#237A49]">Link copied</p>}
-      <div className="mt-4 flex flex-wrap gap-2"><MkButton onClick={page.openCardStudio}><Palette size={14}/>Design card & poster</MkButton><MkButton secondary onClick={page.openLanding} disabled={!page.joinUrl}><ExternalLink size={14}/>Open join page</MkButton></div>
+      <MkButton secondary onClick={page.openCardStudio} className="mt-4"><Palette size={14}/>More poster designs</MkButton>
     </div>
   </Card>
 }
 
 function Report({ page }: { page: ProgramDetailModel }) {
   const r = page.report
-  if (page.isLoading) return <CardGridSkeleton count={4} gridClassName="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" footer={0}/>
+  if (page.isLoading) return <CardGridSkeleton count={4} gridClassName="grid grid-cols-2 gap-3 xl:grid-cols-4" footer={0}/>
   if (!r) return <Card><EmptyBlock title="No report yet" text="The report fills in once rewards start going out."/></Card>
   const tiles = [
     { label: 'Rewards sent', value: r.sent.toLocaleString() },
@@ -137,10 +137,9 @@ export default function ProgramDetailPage() {
       </div>
     </Card>
 
-    {page.confirmDelete && <Card className="flex flex-col gap-3 border-[#FF6B3D] p-5 sm:flex-row sm:items-center sm:justify-between">
-      <div><p className="text-sm font-black">Delete this program?</p><p className="mt-1 text-xs text-black/50">Members lose their progress. This can’t be undone.</p></div>
-      <div className="flex gap-2"><MkButton secondary onClick={page.cancelDelete}>Keep it</MkButton><MkButton onClick={page.remove} loading={page.deleting} className="!bg-[#B43A16]">Delete</MkButton></div>
-    </Card>}
+    <ConfirmModal open={page.confirmDelete} onClose={page.cancelDelete} onConfirm={page.remove} loading={page.deleting} danger kicker="Loyalty program" title="Delete this program?" confirmLabel="Delete program" cancelLabel="Keep it">
+      <b className="text-black">{program?.name}</b> will be removed. Members lose their progress and can’t earn this reward any more. This can’t be undone.
+    </ConfirmModal>
 
     <Tabs options={TABS} value={page.tab} onChange={page.setTab}/>
     <div className={cn(page.tab !== 'overview' && 'hidden')}><Overview page={page}/></div>

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
 import { AlertTriangle, Check, PenLine, Plus, Search, Trash2, Users, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
@@ -9,15 +8,10 @@ import { asRecord, str } from '@/api/http'
 import { Badge, Card, EmptyBlock, MkButton, inputClass, labelClass } from '@/components/ui/mk'
 import { cn } from '@/lib/cn'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
+import { MkModal } from '@/components/ui/MkModal'
 
 function Sheet({ title, kicker, onClose, children, footer }: { title: string; kicker: string; onClose: () => void; children: React.ReactNode; footer: React.ReactNode }) {
-  return <Dialog.Root open onOpenChange={next => { if (!next) onClose() }}>
-    <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-0 sm:p-4"><Dialog.Content aria-describedby={undefined} className="flex max-h-[100dvh] w-full max-w-xl flex-col bg-[#F6F6F2] shadow-2xl outline-none sm:max-h-[92vh]">
-      <div className="flex items-center justify-between gap-3 border-b border-black/10 px-6 py-4"><div><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-black/40">{kicker}</p><Dialog.Title className="text-xl font-black">{title}</Dialog.Title></div><button type="button" aria-label="Close" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full bg-black text-white"><X size={16}/></button></div>
-      <div className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
-      <div className="flex justify-end gap-2 border-t border-black/10 px-6 py-4">{footer}</div>
-    </Dialog.Content></Dialog.Overlay></Dialog.Portal>
-  </Dialog.Root>
+  return <MkModal open onClose={onClose} kicker={kicker} title={title} footer={footer}>{children}</MkModal>
 }
 
 // ─── Groups ───────────────────────────────────────────────────────────────
@@ -43,7 +37,7 @@ function GroupEditor({ group, onClose }: { group: Group | 'new'; onClose: () => 
 
   return <Sheet kicker="Messages" title={existing ? 'Edit group' : 'New group'} onClose={onClose} footer={<><MkButton secondary onClick={onClose}>Cancel</MkButton><MkButton onClick={submit} loading={save.isPending}>{existing ? 'Save changes' : 'Create group'}</MkButton></>}>
     <div className="space-y-5">
-      <label className="block"><span className={labelClass}>Group name</span><input value={name} onChange={event => setName(event.target.value)} placeholder="e.g. Office regulars" className={cn(inputClass, 'mt-2')}/></label>
+      <label className="block"><span className={labelClass}>Group name</span><input value={name} onChange={event => setName(event.target.value)} maxLength={50} placeholder="e.g. Office regulars" className={cn(inputClass, 'mt-2')}/></label>
       <div>
         <span className={labelClass}>Add customers</span>
         <label className="mt-2 flex h-11 items-center gap-2 border border-black/15 bg-white px-3 focus-within:border-black"><Search size={14} className="text-black/40"/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search by name or phone (3+ letters)" className="w-full bg-transparent text-xs outline-none"/></label>

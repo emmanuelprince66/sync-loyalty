@@ -1,4 +1,4 @@
-import { HelpCircle, LogOut, MoreHorizontal, Settings, ShieldCheck, Shuffle, X, type LucideIcon } from 'lucide-react'
+import { Crown, HelpCircle, LogOut, MoreHorizontal, Settings, ShieldCheck, Shuffle, X, type LucideIcon } from 'lucide-react'
 import { useRef, type CSSProperties } from 'react'
 import { NavLink } from 'react-router'
 import { Logo } from '@/components/ui/Logo'
@@ -108,6 +108,7 @@ export function Sidebar() {
           <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-[#D7FF45]" style={{ width: `${verification.percent}%` }}/></span>
         </button>}
         <button type="button" onClick={model.openHelp} className={footerLink}><HelpCircle size={17}/> Help & support</button>
+        {canManageSetup && <button type="button" onClick={model.openPlan} className={footerLink}><Crown size={17}/> Plan & billing</button>}
         {canManageSetup && <button type="button" onClick={model.openSettings} className={footerLink}><Settings size={17}/> Settings</button>}
         <AccountBlock model={model}/>
       </div>

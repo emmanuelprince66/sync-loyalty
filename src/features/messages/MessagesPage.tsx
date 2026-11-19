@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { useState } from 'react'
 import { ChevronRight, CreditCard, Eye, Plus, Send, Users, WalletCards, X } from 'lucide-react'
-import { NAIRA_PER_UNIT } from '@/api/campaigns'
+import { MIN_FUND_AMOUNT, NAIRA_PER_UNIT } from '@/api/campaigns'
 import { formatActivityDate } from '@/api/http'
 import { Badge, Card, EmptyBlock, Metric, MkButton, PageHeading, Tabs, inputClass, labelClass } from '@/components/ui/mk'
 import { cn } from '@/lib/cn'
@@ -15,23 +15,23 @@ const PRESETS = [1000, 5000, 10000, 25000, 50000]
 function Compose({ m, sender }: { m: MessagesModel; sender: SenderIdFlow }) {
   // sink's ComposeCampaign: the sender is the approved sender ID, else the business name.
   const senderName = sender.current || m.businessName
-  return <div className="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
-    <Card className="p-5 lg:p-6">
+  return <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,.75fr)]">
+    <Card className="min-w-0 p-5 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[9px] font-extrabold uppercase tracking-[.15em] text-black/40">Create outreach</p><h3 className="mt-1 text-lg font-black">Write your message</h3></div>
         <div className="inline-flex rounded-full bg-[#EEEEEA] p-1">{(['SMS', 'EMAIL'] as const).map(item => <button key={item} type="button" onClick={() => m.setChannel(item)} className={cn('rounded-full px-4 py-2 text-[10px] font-extrabold', m.channel === item ? 'bg-black text-white' : 'text-black/45')}>{item === 'EMAIL' ? 'Email' : 'SMS'}</button>)}</div>
       </div>
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
         <div className="space-y-4">
           <div><span className={labelClass}>Sender</span>
             <div className="mt-2 flex h-12 items-center justify-between gap-2 border border-black/15 bg-[#FAFAF7] pl-3 pr-1.5"><span className="min-w-0 truncate text-xs font-black">{senderName}</span>{sender.canManage && <button type="button" onClick={sender.openDialog} className="shrink-0 rounded-full border border-black/15 bg-white px-3 py-1.5 text-[10px] font-extrabold hover:border-black">{sender.current ? 'Change' : 'Set up sender ID'}</button>}</div>
             <span className="mt-1.5 block text-[10px] text-black/40">{m.channel === 'EMAIL' ? 'Displayed as the sender in the recipient’s inbox' : sender.current ? 'This is what recipients see as the sender' : 'No sender ID yet: messages go out under your business name'}</span>
           </div>
-          <label className="block"><span className={labelClass}>Name (only you see it)</span><input value={m.name} onChange={event => m.setName(event.target.value)} placeholder="e.g. November promo" className={cn(inputClass, 'mt-2 h-12 font-bold')}/></label>
+          <label className="block"><span className={labelClass}>Name (only you see it)</span><input value={m.name} onChange={event => m.setName(event.target.value)} maxLength={50} placeholder="e.g. November promo" className={cn(inputClass, 'mt-2 h-12 font-bold')}/></label>
           <label className="block"><span className={labelClass}>Send to</span>
             <select value={m.audience} onChange={event => m.setAudience(event.target.value)} className="mt-2 h-12 w-full border border-black/15 bg-white px-3 text-xs font-bold">{m.audienceOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
             <span className="mt-2 flex items-center gap-1.5 text-[9px] font-bold text-black/40"><Users size={11}/>{m.estimating ? 'Counting…' : `${m.recipients.toLocaleString()} customers can be reached`}</span>
           </label>
-          {m.channel === 'EMAIL' && <label className="block"><span className={labelClass}>Subject line</span><input value={m.subject} onChange={event => m.setSubject(event.target.value)} className={cn(inputClass, 'mt-2 h-12 font-bold')}/></label>}
+          {m.channel === 'EMAIL' && <label className="block"><span className={labelClass}>Subject line</span><input value={m.subject} maxLength={100} onChange={event => m.setSubject(event.target.value)} className={cn(inputClass, 'mt-2 h-12 font-bold')}/></label>}
           <label className="block"><span className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-black/45"><span>Message</span><span>{m.message.length} characters{m.channel === 'SMS' && ` · ${m.smsParts} SMS part${m.smsParts > 1 ? 's' : ''}`}</span></span>
             <textarea value={m.message} onChange={event => m.setMessage(event.target.value)} className="mt-2 h-44 w-full resize-none border border-black/15 p-4 text-xs leading-relaxed outline-none focus:border-black" placeholder="Write a message your customers will love..."/>
           </label>
@@ -110,13 +110,13 @@ function BuyCreditsModal({ m }: { m: MessagesModel }) {
   const naira = Number(amount || 0)
   const units = Math.floor(naira / NAIRA_PER_UNIT)
   return <Dialog.Root open={m.buying} onOpenChange={next => { if (!next) { m.closeBuy(); setAmount('') } }}>
-    <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4"><Dialog.Content aria-describedby={undefined} className="w-full max-w-xl bg-[#F6F6F2] p-6 shadow-2xl outline-none">
+    <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"><Dialog.Content aria-describedby={undefined} className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-t-[24px] bg-[#F6F6F2] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl outline-none sm:max-h-[90vh] sm:rounded-none sm:p-6">
       <div className="flex items-start justify-between"><div><Badge>TOP UP</Badge><Dialog.Title className="mt-3 text-xl font-black">Buy messaging credits</Dialog.Title><p className="mt-1 text-xs text-black/45">₦{NAIRA_PER_UNIT} = 1 unit · 1 unit = 1 SMS, or 3 emails.</p></div><button type="button" aria-label="Close" onClick={m.closeBuy} className="grid h-9 w-9 place-items-center rounded-full bg-black text-white"><X size={15}/></button></div>
       <div className="mt-6 flex flex-wrap gap-2">{PRESETS.map(preset => <button key={preset} type="button" onClick={() => setAmount(String(preset))} className={cn('rounded-full px-4 py-2 text-xs font-black', naira === preset ? 'bg-[#D7FF45]' : 'border border-black/15 bg-white')}>₦{preset.toLocaleString()}</button>)}</div>
       <label className="mt-4 block"><span className={labelClass}>Amount (₦)</span><input value={amount} inputMode="numeric" placeholder="0" onChange={event => setAmount(event.target.value.replace(/\D/g, ''))} className={cn(inputClass, 'mt-2')}/></label>
       <div className="mt-5 grid grid-cols-2 gap-3 bg-black p-4 text-white"><div><p className="text-[9px] font-extrabold uppercase tracking-wider text-white/40">You get</p><p className="mt-1 text-2xl font-black">{units.toLocaleString()} units</p></div><div className="text-right"><p className="text-[9px] font-extrabold uppercase tracking-wider text-white/40">You pay</p><p className="mt-1 text-2xl font-black">₦{naira.toLocaleString()}</p></div></div>
       <div className="mt-4 flex items-center gap-3 border border-black/10 bg-white p-4"><CreditCard size={17}/><div><p className="text-xs font-black">Bank transfer or debit card</p><p className="text-[9px] text-black/40">You’ll be taken to the payment page. Credits load once payment goes through.</p></div></div>
-      <MkButton onClick={() => m.buy(naira)} loading={m.funding} disabled={units < 1} className="mt-5 w-full">Continue to payment</MkButton>
+      <MkButton onClick={() => m.buy(naira)} loading={m.funding} disabled={naira < MIN_FUND_AMOUNT} className="mt-5 w-full">Continue to payment</MkButton>
     </Dialog.Content></Dialog.Overlay></Dialog.Portal>
   </Dialog.Root>
 }
@@ -124,7 +124,7 @@ function BuyCreditsModal({ m }: { m: MessagesModel }) {
 function AutomationEditor({ m }: { m: MessagesModel }) {
   const editing = m.editing
   return <Dialog.Root open={Boolean(editing)} onOpenChange={next => { if (!next) m.closeEditing() }}>
-    <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4"><Dialog.Content aria-describedby={undefined} className="w-full max-w-lg bg-[#F6F6F2] p-6 shadow-2xl outline-none">
+    <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"><Dialog.Content aria-describedby={undefined} className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-[24px] bg-[#F6F6F2] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl outline-none sm:max-h-[90vh] sm:rounded-none sm:p-6">
       <div className="flex items-start justify-between"><Dialog.Title className="text-xl font-black">Automation message</Dialog.Title><button type="button" aria-label="Close" onClick={m.closeEditing} className="grid h-9 w-9 place-items-center rounded-full bg-black text-white"><X size={15}/></button></div>
       {editing && <div className="mt-5 space-y-4">
         <div className="inline-flex rounded-full bg-[#EEEEEA] p-1">{(['SMS', 'EMAIL'] as const).map(item => <button key={item} type="button" onClick={() => m.updateEditing({ channel: item })} className={cn('rounded-full px-4 py-2 text-[10px] font-extrabold', editing.channel === item ? 'bg-black text-white' : 'text-black/45')}>{item === 'EMAIL' ? 'Email' : 'SMS'}</button>)}</div>
@@ -153,7 +153,7 @@ export default function MessagesPage() {
       {m.canBuy && <MkButton secondary onClick={m.openBuy}><WalletCards size={14}/>Buy credits</MkButton>}
       {m.canSend && <MkButton onClick={() => m.setTab('compose')}><Plus size={14}/>New message</MkButton>}
     </>}/>
-    <div className="grid gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*:last-child:nth-child(odd)]:col-span-2 sm:[&>*:last-child:nth-child(odd)]:col-span-1">
       <Metric label="Available credits" value={m.creditsLoading ? '—' : m.balance.toLocaleString()} detail="SMS & email" icon={WalletCards} dark/>
       <Metric label="Used this month" value={m.creditsLoading ? '—' : m.usedThisMonth.toLocaleString()} icon={Send}/>
       <Metric label="Messages sent" value={m.campaignsLoading ? '—' : m.campaigns.length.toLocaleString()} detail={live ? `${live} automations live` : ''} icon={Eye}/>

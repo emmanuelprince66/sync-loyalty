@@ -11,7 +11,7 @@ import { asRecord, listFrom, num, str, type UnknownRecord } from './http'
  *  GET        loyalty/programs/{program_id}/qr/             { token, qr_url } for the join QR
  *  GET        loyalty/dashboard/{business_id}/              headline numbers
  *  GET        loyalty/customers/{business_id}/?search&tier_id   members with code, tier, progress
- *  GET/POST   loyalty/tiers/{business_id}/, PATCH/DELETE loyalty/tiers/{tier_id}/
+ *  GET/POST   loyalty/tiers/{business_id}/, PATCH/DELETE loyalty/tiers/{tier_id}/ (as sink-inventory calls it)
  *  GET        loyalty/rewards/{business_id}/?status         issued rewards
  *  POST       loyalty/rewards/{reward_id}/redeem/           { loyalty_code, sale_id? }
  *  GET        loyalty/rewards/analytics/{business_id}/      rewards summary
@@ -109,6 +109,13 @@ export type MemberWallet = {
   visitCount: number
   streak: number
   availableRewards: { id: string; label: string }[]
+  /** The member's own code to share with friends (LoyaltyJoin referral_code). */
+  referralCode: string
+  /** The customer record the card belongs to: a sale for them counts as a visit. */
+  customerId: string
+  email: string
+  /** Rewards already used: label + when. */
+  history: { id: string; label: string; date: string }[]
 }
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
@@ -182,6 +189,13 @@ const mapWallet = (value: unknown): MemberWallet => {
     totalVisits: num(w.total_visits), totalSpend: num(w.total_spend), points: num(w.points_balance),
     progress: str(e.progress_display), statusLabel: str(e.status_label), rewardDescription: str(e.reward_description),
     remaining: str(e.remaining_message), visitCount: num(e.visit_count), streak: num(e.current_streak),
+    referralCode: str(w.referral_code),
+    customerId: str(w.customer_id),
+    email: str(w.email),
+    history: listFrom(w.redemption_history, []).map((item, index) => {
+      const r = asRecord(item)
+      return { id: str(r.id) || String(index), label: str(r.reward_summary) || str(r.reward_description) || str(r.description) || str(r.program_name) || 'Reward used', date: str(r.redeemed_at) || str(r.created_at) }
+    }),
     availableRewards: listFrom(w.available_rewards, []).map(item => {
       // sink's rewardIdOf / rewardLabelOf: the id is what redeems it; reward_summary is the backend's own wording.
       const r = asRecord(item)
@@ -550,12 +564,12 @@ export const useMemberWallet = (code: string) => useQuery({
   retry: false,
 })
 
-export type PublicProgram = { businessName: string; businessLogo: string; name: string; description: string; rewardSummary: string; triggerSummary: string }
+export type PublicProgram = { businessId: string; businessName: string; businessLogo: string; name: string; description: string; rewardSummary: string; triggerSummary: string }
 
 const getPublicProgram = async (token: string): Promise<PublicProgram> => {
   const raw = asRecord(await apiRequest<unknown>(`loyalty/join/${token}/`, { auth: false }))
   const p = asRecord(raw.data ?? raw)
-  return { businessName: str(p.business_name), businessLogo: str(p.business_logo), name: str(p.name), description: str(p.description), rewardSummary: str(p.reward_summary), triggerSummary: str(p.trigger_summary) }
+  return { businessId: str(p.business_id), businessName: str(p.business_name), businessLogo: str(p.business_logo), name: str(p.name), description: str(p.description), rewardSummary: str(p.reward_summary), triggerSummary: str(p.trigger_summary) }
 }
 
 export const usePublicProgram = (token: string | undefined) => useQuery({
@@ -590,11 +604,27 @@ const getRewardItems = async (scope: string, type: 'PRODUCT' | 'SERVICE', search
   if (type === 'PRODUCT') params.set('include_raw_material', 'false')
   return listFrom(await apiRequest<unknown>(`product/business/${scope}/?${params.toString()}`), ['results.data', 'data.results.data', 'results', 'data']).map(value => {
     const item = asRecord(value)
-    return { id: str(item.id), name: str(item.name), price: num(item.selling_price) }
+    return { id: str(item.id), name: str(item.name), price: num(item.selling_price ?? item.amount) }
   }).filter(item => item.id)
 }
 
 export const useRewardItems = (type: 'PRODUCT' | 'SERVICE', search: string, enabled: boolean) => {
   const { scope, enabled: ready } = useScope()
   return useQuery({ queryKey: [...loyaltyKeys.all, 'reward-items', scope, type, search], queryFn: () => getRewardItems(scope, type, search), enabled: ready && enabled, placeholderData: keepPreviousData })
+}
+
+// ─── Members (GET loyalty/members/{business_id}/) ─────────────────────────
+
+export type LoyaltyMemberRow = { id: string; name: string; phone: string; referralCode: string; tier: string; visits: number; spend: number; birthday: string; gender: string; joinedAt: string }
+
+export const useLoyaltyMembers = () => {
+  const { scope, enabled } = useScope()
+  return useQuery({
+    queryKey: [...loyaltyKeys.all, 'members', scope],
+    queryFn: async () => listFrom(await apiRequest<unknown>(`loyalty/members/${scope}/`), ['results', 'data', 'results.data']).map((value): LoyaltyMemberRow => {
+      const m = asRecord(value)
+      return { id: str(m.id), name: str(m.name), phone: str(m.phone), referralCode: str(m.referral_code), tier: str(m.tier_name), visits: num(m.total_visits), spend: num(m.total_spend), birthday: str(m.birthday), gender: str(m.gender), joinedAt: str(m.joined_at) }
+    }),
+    enabled,
+  })
 }

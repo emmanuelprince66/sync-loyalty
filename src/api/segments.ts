@@ -32,15 +32,16 @@ export type Segment = {
 export type SegmentCustomer = { id: string; name: string; phone: string; email: string; totalSpend: number; purchases: number }
 export type SegmentInput = { name: string; type: string; matchType: MatchType; conditions: Record<string, number | string> }
 
-/** sink's SEGMENT_TYPES. */
+/** The API's segment_type enum (CustomerSegment in the Sync360 spec); sink's list had two the API rejects. */
 export const SEGMENT_TYPES = [
   { value: 'CUSTOM', label: 'Custom' },
   { value: 'VIP_CUSTOMERS', label: 'VIP customers' },
+  { value: 'BIG_SPENDERS', label: 'Big spenders' },
   { value: 'FREQUENT_BUYERS', label: 'Frequent buyers' },
   { value: 'NEW_CUSTOMERS', label: 'New customers' },
-  { value: 'AT_RISK', label: 'At risk' },
   { value: 'INACTIVE_CUSTOMERS', label: 'Inactive customers' },
-  { value: 'REGULAR_BUYERS', label: 'Regular buyers' },
+  { value: 'LOST_CUSTOMERS', label: 'Lost customers' },
+  { value: 'BIRTHDAY', label: 'Birthdays' },
 ]
 
 /** sink's CONDITION_FIELDS. Unknown keys from the backend still round-trip. */

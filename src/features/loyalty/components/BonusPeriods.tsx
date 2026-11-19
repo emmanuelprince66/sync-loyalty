@@ -7,6 +7,7 @@ import { Card, EmptyBlock, MkButton, inputClass, labelClass } from '@/components
 import { cn } from '@/lib/cn'
 import { DateRangeFilter, fromApiDate, toApiDate } from '@/components/ui/DateRangeFilter'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
+import { MkModal } from '@/components/ui/MkModal'
 
 const EMPTY: BonusPeriodInput = { name: '', multiplier: '2', days: [], startDate: '', endDate: '' }
 const short = (day: WeekDay) => day.slice(0, 3).toLowerCase().replace(/^./, c => c.toUpperCase())
@@ -34,9 +35,22 @@ export function BonusPeriods({ programId, canManage }: { programId: string; canM
   return <Card className="overflow-hidden">
     <div className="flex items-center justify-between gap-3 border-b border-black/10 p-5">
       <div><h3 className="flex items-center gap-2 text-sm font-black"><Sparkles size={15}/>Bonus periods</h3><p className="mt-1 text-[11px] text-black/45">Visits and spend count extra at these times</p></div>
-      {canManage && !form && <MkButton secondary onClick={() => setForm(EMPTY)}><Plus size={14}/>Add</MkButton>}
+      {canManage && <MkButton secondary onClick={() => setForm(EMPTY)}><Plus size={14}/>Add</MkButton>}
     </div>
-    {form && <div className="space-y-4 border-b border-black/10 bg-[#FAFAF7] p-5">
+    {periods.isLoading ? <TableSkeleton header={false} rows={2} columns={[{ flex: true, twoLine: true }, { width: 'w-20', alignRight: true }]}/>
+      : list.length === 0 ? (<EmptyBlock title="No bonus periods" text="Add one to make quiet days busier, like double visits on Tuesdays."/>)
+        : list.map(period => <div key={period.id} className="flex items-center justify-between gap-3 border-b border-black/10 p-4 last:border-0">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 truncate text-xs font-black">{period.name}<span className="rounded-full bg-[#D7FF45] px-2 py-0.5 text-[10px]">{period.multiplier}×</span></p>
+            <p className="mt-1 truncate text-[10px] text-black/45">{period.days.length ? period.days.map(short).join(', ') : 'Every day'}{period.startDate ? ` · ${period.startDate}${period.endDate ? ` to ${period.endDate}` : ''}` : ''}</p>
+          </div>
+          {canManage && <div className="flex shrink-0 items-center gap-2">
+            <button type="button" role="switch" aria-checked={period.active} aria-label={`${period.name} on`} disabled={update.isPending} onClick={() => update.mutate({ id: period.id, patch: { is_active: !period.active } }, { onError: error => toast.error(errorMessage(error, 'Could not update the bonus period.')) })} className={cn('relative h-6 w-11 rounded-full transition disabled:opacity-50', period.active ? 'bg-black' : 'bg-black/15')}><i className={cn('absolute top-1 h-4 w-4 rounded-full transition-all', period.active ? 'left-6 bg-[#D7FF45]' : 'left-1 bg-white')}/></button>
+            <button type="button" aria-label={`Remove ${period.name}`} disabled={remove.isPending} onClick={() => remove.mutate(period.id, { onSuccess: () => toast.success('Bonus period removed'), onError: error => toast.error(errorMessage(error, 'Could not remove it.')) })} className="grid h-8 w-8 place-items-center rounded-full border border-black/10 disabled:opacity-50"><Trash2 size={13}/></button>
+          </div>}
+        </div>)}
+    <MkModal open={Boolean(form)} onClose={() => setForm(null)} kicker="Bonus periods" title="New bonus period" size="sm" footer={<><MkButton secondary onClick={() => setForm(null)}>Cancel</MkButton><MkButton onClick={save} loading={create.isPending}>Save</MkButton></>}>
+      {form && <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
         <label><span className={labelClass}>Name</span><input value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} placeholder="e.g. Double Tuesdays" className={cn(inputClass, 'mt-2')}/></label>
         <label><span className={labelClass}>Multiplier</span><div className="mt-2 flex h-11 items-center border border-black/15 bg-white px-3"><input inputMode="decimal" value={form.multiplier} onChange={event => setForm({ ...form, multiplier: event.target.value.replace(/[^\d.]/g, '') })} className="w-full bg-transparent text-xs outline-none"/><span className="text-[10px] font-bold text-black/40">×</span></div></label>
@@ -48,19 +62,7 @@ export function BonusPeriods({ programId, canManage }: { programId: string; canM
       <div><span className={labelClass}>Dates <small className="normal-case text-black/35">optional</small></span>
         <DateRangeFilter value={form.startDate ? { from: fromApiDate(form.startDate), to: fromApiDate(form.endDate) } : undefined} onChange={next => setForm({ ...form, startDate: toApiDate(next?.from), endDate: toApiDate(next?.to) })} placeholder="Any dates" align="start" className="mt-2 w-full" triggerClassName="h-11 rounded-none border-black/15"/>
       </div>
-      <div className="flex justify-end gap-2"><MkButton secondary onClick={() => setForm(null)}>Cancel</MkButton><MkButton onClick={save} loading={create.isPending}>Save</MkButton></div>
-    </div>}
-    {periods.isLoading ? <TableSkeleton header={false} rows={2} columns={[{ flex: true, twoLine: true }, { width: 'w-20', alignRight: true }]}/>
-      : list.length === 0 ? (!form && <EmptyBlock title="No bonus periods" text="Add one to make quiet days busier, like double visits on Tuesdays."/>)
-        : list.map(period => <div key={period.id} className="flex items-center justify-between gap-3 border-b border-black/10 p-4 last:border-0">
-          <div className="min-w-0">
-            <p className="flex items-center gap-2 truncate text-xs font-black">{period.name}<span className="rounded-full bg-[#D7FF45] px-2 py-0.5 text-[10px]">{period.multiplier}×</span></p>
-            <p className="mt-1 truncate text-[10px] text-black/45">{period.days.length ? period.days.map(short).join(', ') : 'Every day'}{period.startDate ? ` · ${period.startDate}${period.endDate ? ` to ${period.endDate}` : ''}` : ''}</p>
-          </div>
-          {canManage && <div className="flex shrink-0 items-center gap-2">
-            <button type="button" role="switch" aria-checked={period.active} aria-label={`${period.name} on`} disabled={update.isPending} onClick={() => update.mutate({ id: period.id, patch: { is_active: !period.active } }, { onError: error => toast.error(errorMessage(error, 'Could not update the bonus period.')) })} className={cn('relative h-6 w-11 rounded-full transition disabled:opacity-50', period.active ? 'bg-black' : 'bg-black/15')}><i className={cn('absolute top-1 h-4 w-4 rounded-full transition-all', period.active ? 'left-6 bg-[#D7FF45]' : 'left-1 bg-white')}/></button>
-            <button type="button" aria-label={`Remove ${period.name}`} disabled={remove.isPending} onClick={() => remove.mutate(period.id, { onSuccess: () => toast.success('Bonus period removed'), onError: error => toast.error(errorMessage(error, 'Could not remove it.')) })} className="grid h-8 w-8 place-items-center rounded-full border border-black/10 disabled:opacity-50"><Trash2 size={13}/></button>
-          </div>}
-        </div>)}
+      </div>}
+    </MkModal>
   </Card>
 }

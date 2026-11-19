@@ -1,5 +1,7 @@
 import { Plus, QrCode } from 'lucide-react'
-import { Badge, Card, Chips, EmptyBlock, ErrorBlock, MkButton, PageHeading } from '@/components/ui/mk'
+import { useState } from 'react'
+import { Badge, Card, Chips, EmptyBlock, ErrorBlock, MkButton, PageHeading, Tabs } from '@/components/ui/mk'
+import { MembersTab } from './components/MembersTab'
 import { PROGRAM_FILTERS, statusLabel, useLoyaltyPage } from './hooks/useLoyaltyPage'
 import { useCardColour } from '@/api/storeTheme'
 import { CardGridSkeleton } from '@/components/ui/CardSkeleton'
@@ -7,8 +9,11 @@ import { CardGridSkeleton } from '@/components/ui/CardSkeleton'
 export default function LoyaltyPage() {
   const page = useLoyaltyPage()
   const colour = useCardColour()
+  const [tab, setTab] = useState<'programs' | 'members'>('programs')
   return <div className="space-y-5">
     <PageHeading title="Loyalty programs" subtitle="Build habits, grow spend, and reward your best customers." actions={page.canCreate && <MkButton onClick={page.create}><Plus size={15}/>Create loyalty</MkButton>}/>
+    <Tabs options={[{ value: 'programs', label: 'Programs' }, { value: 'members', label: 'Members' }]} value={tab} onChange={setTab}/>
+    {tab === 'members' ? <MembersTab/> : <>
     <Chips options={PROGRAM_FILTERS} value={page.filter} onChange={page.setFilter}/>
     {page.isError
       ? <Card><ErrorBlock text="We couldn’t load your loyalty programs." onRetry={page.retry}/></Card>
@@ -33,5 +38,6 @@ export default function LoyaltyPage() {
               </div>
             </div>
           </Card>)}</div>}
+    </>}
   </div>
 }

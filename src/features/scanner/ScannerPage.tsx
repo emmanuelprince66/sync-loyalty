@@ -5,6 +5,9 @@ import { Badge, Card, MkButton } from '@/components/ui/mk'
 import { CustomerFormModal } from '@/features/customers/components/CustomerFormModal'
 import { useBusinessDataStore } from '@/stores/business-data-store'
 import { useState } from 'react'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { Receipt } from 'lucide-react'
+import { RecordVisitModal } from './RecordVisitModal'
 import { toast } from 'sonner'
 import { CustomersSheet } from '@/features/customers/components/CustomersSheet'
 import { Users } from 'lucide-react'
@@ -26,6 +29,8 @@ export default function ScannerPage() {
   const businessName = useBusinessDataStore(state => state.businessData?.name) || 'Your business'
   const cardColour = useCardColour()
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [confirming, setConfirming] = useState<{ id: string; label: string } | null>(null)
+  const [recording, setRecording] = useState(false)
   return <div className="mx-auto max-w-5xl space-y-5">
     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><Badge>TRANSACTION MODE</Badge><h2 className="mt-3 text-3xl font-black tracking-[-.055em]">Check in a customer.</h2><p className="mt-1 text-sm text-black/50">Scan their digital card, select them from your customers, or enter their member code.</p></div><MkButton secondary onClick={() => setSheetOpen(true)}><Users size={14}/>Select customer</MkButton></div>
     <CustomersSheet open={sheetOpen} onOpenChange={setSheetOpen} onSelect={customer => { setSheetOpen(false); if (customer.loyaltyCode) s.pick(customer.loyaltyCode); else toast.error(customer.name + ' is not a loyalty member yet.') }}/>
@@ -77,12 +82,16 @@ export default function ScannerPage() {
           ? <div className="mt-3 flex items-center justify-between bg-[#F0F0EC] p-4"><div><b className="block text-xs">No rewards ready yet</b><span className="text-[9px] text-black/45">{s.wallet?.remaining || 'Keep visiting to unlock a reward.'}</span></div><Sparkles size={18}/></div>
           : <div className="mt-3 space-y-2">{s.rewards.map(reward => <div key={reward.id} className="flex items-center justify-between gap-3 bg-[#D7FF45] p-4">
             <span className="flex min-w-0 items-center gap-2"><Gift size={15} className="shrink-0"/><b className="truncate text-xs">{reward.label}</b></span>
-            <MkButton onClick={() => s.redeem(reward.id)} loading={s.redeemingId === reward.id} className="shrink-0"><Check size={14}/>Redeem</MkButton>
+            <MkButton onClick={() => setConfirming(reward)} loading={s.redeemingId === reward.id} className="shrink-0"><Check size={14}/>Redeem</MkButton>
           </div>)}</div>}
-        <p className="mt-6 border-t border-black/10 pt-4 text-[11px] leading-5 text-black/50">Visits and spend are added automatically when you record a sale for this customer at your till.</p>
+        {s.wallet && <div className="mt-6 border-t border-black/10 pt-4"><MkButton onClick={() => setRecording(true)} className="w-full"><Receipt size={15}/>Record visit</MkButton><p className="mt-2 text-[11px] leading-5 text-black/50">Ring up what they bought; the visit and spend count toward their loyalty, like a sale at your till.</p></div>}
       </Card>
     </div>}
 
     <CustomerFormModal open={s.registering} customer={null} onClose={s.closeRegister}/>
+    <ConfirmModal open={Boolean(confirming)} onClose={() => setConfirming(null)} onConfirm={() => { if (confirming) { s.redeem(confirming.id); setConfirming(null) } }} kicker="Redeem reward" title="Hand over this reward?" confirmLabel="Redeem now">
+      {confirming && <>Mark <b className="text-black">{confirming.label}</b> as used{s.wallet ? <> for <b className="text-black">{s.wallet.name}</b></> : null}. Do this when you give it to them; it can’t be undone.</>}
+    </ConfirmModal>
+    {s.wallet && <RecordVisitModal open={recording} onClose={() => setRecording(false)} wallet={s.wallet}/>}
   </div>
 }

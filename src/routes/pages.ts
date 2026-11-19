@@ -18,8 +18,10 @@ const loaders = {
   segments: () => import('@/features/segments/SegmentsPage'),
   insights: () => import('@/features/insights/InsightsPage'),
   referrals: () => import('@/features/referrals/ReferralsPage'),
+  referralProgramme: () => import('@/features/referrals/ReferralProgrammePage'),
   importCustomers: () => import('@/features/customers/ImportCustomersPage'),
   kyc: () => import('@/features/kyc/KycPage'),
+  plan: () => import('@/features/plan/PlanPage'),
   join: () => import('@/features/public/JoinPage'),
   card: () => import('@/features/public/MemberCardPage'),
 }
@@ -41,8 +43,10 @@ export const pages = {
   SegmentsPage: lazy(loaders.segments),
   InsightsPage: lazy(loaders.insights),
   ReferralsPage: lazy(loaders.referrals),
+  ReferralProgrammePage: lazy(loaders.referralProgramme),
   ImportCustomersPage: lazy(loaders.importCustomers),
   KycPage: lazy(loaders.kyc),
+  PlanPage: lazy(loaders.plan),
   JoinPage: lazy(loaders.join),
   MemberCardPage: lazy(loaders.card),
 }

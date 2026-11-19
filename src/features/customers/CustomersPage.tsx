@@ -21,7 +21,7 @@ export default function CustomersPage() {
       {page.canAdd && <MkButton onClick={page.openForm}><Plus size={14}/>Add customer</MkButton>}
     </>}/>
 
-    <div className="grid gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*:last-child:nth-child(odd)]:col-span-2 sm:[&>*:last-child:nth-child(odd)]:col-span-1">
       {page.statsLoading
         ? Array.from({ length: 3 }, (_, index) => <MetricSkeleton key={index}/>)
         : page.metrics.map((metric, index) => <Metric key={metric.label} label={metric.label} value={metric.value} detail={metric.detail} icon={icons[index]}/>)}

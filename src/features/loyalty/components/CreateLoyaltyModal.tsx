@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Check, Gift, Heart, Search, TrendingUp, Trophy, 
 import { isDarkColour } from '@/api/storeTheme'
 import { CARD_COLOURS, MkButton, StampRow, inputClass, labelClass } from '@/components/ui/mk'
 import { cn } from '@/lib/cn'
+import { ProgramCreatedModal } from './ProgramCreatedModal'
 import { GOALS, MECHANICS, NOTIFICATIONS, REWARDS, STYLES, TIMEOUT_ACTIONS, TIME_LIMITS, VISIT_WINDOWS, useCreateLoyalty, type CreateLoyaltyModel } from '../hooks/useCreateLoyalty'
 
 const goalIcons = { visits: Heart, revenue: TrendingUp, streak: Zap, vip: Trophy }
@@ -124,7 +125,9 @@ function StepBar({ m }: { m: CreateLoyaltyModel }) {
 export function CreateLoyaltyModal() {
   const m = useCreateLoyalty()
   const last = m.step === m.steps.length
-  return <Dialog.Root open={m.open} onOpenChange={next => { if (!next) m.close() }}>
+  return <>
+  <ProgramCreatedModal program={m.created} onClose={m.closeCreated} onView={m.viewCreated}/>
+  <Dialog.Root open={m.open} onOpenChange={next => { if (!next) m.close() }}>
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-0 sm:p-4">
         <Dialog.Content aria-describedby={undefined} className="max-h-[100dvh] w-full max-w-5xl overflow-y-auto bg-[#F6F6F2] shadow-2xl outline-none sm:max-h-[92vh]">
@@ -175,4 +178,5 @@ export function CreateLoyaltyModal() {
       </Dialog.Overlay>
     </Dialog.Portal>
   </Dialog.Root>
+  </>
 }

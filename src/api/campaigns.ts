@@ -17,6 +17,8 @@ import { asRecord, listFrom, num, str } from './http'
  */
 
 export const NAIRA_PER_UNIT = 10
+/** FundCampaign.amount minimum in the API spec. */
+export const MIN_FUND_AMOUNT = 100
 export const campaignKeys = { all: ['campaigns'] as const }
 
 const useScope = () => {
@@ -32,9 +34,9 @@ export type Campaign = { id: string; name: string; title: string; channel: Chann
 export type Group = { id: string; name: string; count: number; members: { id: string; name: string; phone: string }[] }
 export type Segment = { id: string; name: string; count: number }
 export type Automation = { type: AutomationType; message: string; channel: Channel; active: boolean }
-export type AutomationType = 'POINT-OF-PURCHASE' | 'FRIDAY' | 'MONDAY' | 'NEW-MONTH' | 'RETURNING-CUSTOMER' | 'INACTIVE'
+export type AutomationType = 'POINT-OF-PURCHASE' | 'FRIDAY' | 'MONDAY' | 'NEW-MONTH' | 'RETURNING-CUSTOMER' | 'INACTIVE' | 'BIRTHDAY'
 
-/** The six automations sink's Campaign settings save, with the design's wording. */
+/** The API's MarketAutomation types (sink's six, plus BIRTHDAY), with the design's wording. */
 export const AUTOMATION_TYPES: { type: AutomationType; name: string; detail: string }[] = [
   { type: 'POINT-OF-PURCHASE', name: 'Thank you after purchase', detail: 'Sent after every recorded sale' },
   { type: 'NEW-MONTH', name: 'Happy new month', detail: 'Sent on the first day of every month' },
@@ -42,6 +44,7 @@ export const AUTOMATION_TYPES: { type: AutomationType; name: string; detail: str
   { type: 'FRIDAY', name: 'Weekend nudge', detail: 'Sent every Friday' },
   { type: 'RETURNING-CUSTOMER', name: 'Welcome back', detail: 'Sent when a customer comes back' },
   { type: 'INACTIVE', name: 'We miss you', detail: 'Sent when a customer has not visited in a while' },
+  { type: 'BIRTHDAY', name: 'Happy birthday', detail: 'A personal message on their birthday' },
 ]
 
 

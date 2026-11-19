@@ -37,7 +37,7 @@ function SegmentEditor({ segment, onClose }: { segment: Segment | 'new'; onClose
   }
 
   return <Dialog.Root open onOpenChange={next => { if (!next) onClose() }}>
-    <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-0 sm:p-4"><Dialog.Content aria-describedby={undefined} className="max-h-[100dvh] w-full max-w-xl overflow-y-auto bg-[#F6F6F2] shadow-2xl outline-none sm:max-h-[92vh]">
+    <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"><Dialog.Content aria-describedby={undefined} className="max-h-[92dvh] rounded-t-[24px] sm:rounded-none w-full max-w-xl overflow-y-auto bg-[#F6F6F2] shadow-2xl outline-none sm:max-h-[92vh]">
       <div className="flex items-center justify-between gap-3 border-b border-black/10 px-6 py-4"><div><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-black/40">Segments</p><Dialog.Title className="text-xl font-black">{existing ? 'Edit segment' : 'New segment'}</Dialog.Title></div><button type="button" aria-label="Close" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full bg-black text-white"><X size={16}/></button></div>
       <div className="space-y-5 p-6">
         <label className="block"><span className={labelClass}>Name</span><input value={name} onChange={event => setName(event.target.value)} placeholder="e.g. Weekend regulars" className={cn(inputClass, 'mt-2')}/></label>

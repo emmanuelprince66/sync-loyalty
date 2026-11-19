@@ -73,6 +73,7 @@ export function useSidebar() {
     closeMenu,
     openSettings: () => go(paths.settings),
     goToKyc: () => go(paths.kyc),
+    openPlan: () => go(paths.plan),
     openHelp: () => { setMenuOpen(false); window.location.href = `mailto:${SUPPORT_EMAIL}` },
     /** The picker clears the old business's data only if a different one is chosen. */
     switchBusiness: () => go(paths.selectBusiness, { from: pathname }),

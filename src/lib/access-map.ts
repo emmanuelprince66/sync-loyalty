@@ -45,4 +45,5 @@ export const PAGE_AREAS: readonly (readonly [string, AccessArea])[] = [
   ['/messages', 'messages'],
   ['/settings', 'setup'],
   ['/kyc', 'setup'],
+  ['/plan', 'setup'],
 ]

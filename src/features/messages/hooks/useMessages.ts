@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
-import { AUTOMATION_TYPES, NAIRA_PER_UNIT, useAudiences, useAutomations, useCampaigns, useCreateCampaign, useCreditUsage, useCredits, useEstimate, useFundCredits, useSaveAutomations, type Automation, type AutomationType, type Channel } from '@/api/campaigns'
+import { AUTOMATION_TYPES, MIN_FUND_AMOUNT, useAudiences, useAutomations, useCampaigns, useCreateCampaign, useCreditUsage, useCredits, useEstimate, useFundCredits, useSaveAutomations, type Automation, type AutomationType, type Channel } from '@/api/campaigns'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useBusinessDataStore } from '@/stores/business-data-store'
 
@@ -146,7 +146,7 @@ export function useMessages() {
     funding: fund.isPending,
     /** As sink's FundMessageCredits: start the purchase, then send the user to the payment page it returns. */
     buy: (naira: number) => {
-      if (Math.floor(naira / NAIRA_PER_UNIT) < 1) return toast.error(`Enter at least ₦${NAIRA_PER_UNIT}.`)
+      if (naira < MIN_FUND_AMOUNT) return toast.error(`Enter at least ₦${MIN_FUND_AMOUNT}.`)
       fund.mutate(naira, {
         onSuccess: ({ paymentUrl, message }) => { toast.success(message || 'Taking you to payment…'); window.location.href = paymentUrl },
         onError: error => toast.error(errorMessage(error, 'Could not start the payment.')),

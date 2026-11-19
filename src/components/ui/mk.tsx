@@ -34,15 +34,15 @@ export function Card({ children, className }: { children: ReactNode; className?:
 }
 
 export function Metric({ label, value, detail, icon: Icon, dark = false }: { label: string; value: string; detail?: string; icon: ElementType; dark?: boolean }) {
-  return <Card className={cn('min-w-0 p-5', dark && 'bg-black text-white')}>
+  return <Card className={cn('min-w-0 p-4 sm:p-5', dark && 'bg-black text-white')}>
     <div className="flex items-start justify-between">
-      <span className={cn('grid h-9 w-9 place-items-center rounded-full', dark ? 'bg-[#D7FF45] text-black' : 'bg-[#F0F0EC]')}><Icon size={16}/></span>
+      <span className={cn('grid h-8 w-8 place-items-center rounded-full sm:h-9 sm:w-9', dark ? 'bg-[#D7FF45] text-black' : 'bg-[#F0F0EC]')}><Icon size={15}/></span>
       <MoreHorizontal size={16} className={dark ? 'text-white/35' : 'text-black/30'} aria-hidden="true"/>
     </div>
-    <p className={cn('mt-5 text-[10px] font-bold uppercase tracking-[.12em]', dark ? 'text-white/45' : 'text-black/45')}>{label}</p>
-    <div className="mt-1.5 flex min-w-0 items-end justify-between gap-2">
-      <p className="truncate text-[27px] font-black tracking-[-.05em]">{value}</p>
-      {detail && <span className={cn('mb-1 shrink-0 text-[9px] font-extrabold', dark ? 'text-[#D7FF45]' : 'text-[#237A49]')}>{detail}</span>}
+    <p className={cn('mt-4 truncate text-[10px] font-bold uppercase tracking-[.12em] sm:mt-5', dark ? 'text-white/45' : 'text-black/45')}>{label}</p>
+    <div className="mt-1.5 flex min-w-0 flex-col items-start gap-0.5 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
+      <p className="max-w-full truncate text-[22px] font-black tracking-[-.05em] sm:text-[27px]">{value}</p>
+      {detail && <span className={cn('max-w-full truncate text-[9px] font-extrabold sm:mb-1 sm:shrink-0', dark ? 'text-[#D7FF45]' : 'text-[#237A49]')}>{detail}</span>}
     </div>
   </Card>
 }
@@ -77,7 +77,7 @@ export function Chips<T extends string>({ options, value, onChange }: { options:
 /** Underlined tabs (Compose / Campaigns / …). */
 export function Tabs<T extends string>({ options, value, onChange }: { options: readonly { value: T; label: ReactNode }[]; value: T; onChange: (value: T) => void }) {
   return <div className="flex gap-1 overflow-x-auto border-b border-black/10" role="tablist">
-    {options.map(option => <button key={option.value} type="button" role="tab" aria-selected={value === option.value} onClick={() => onChange(option.value)} className={cn('shrink-0 border-b-2 px-5 py-3 text-xs font-extrabold', value === option.value ? 'border-black text-black' : 'border-transparent text-black/40')}>{option.label}</button>)}
+    {options.map(option => <button key={option.value} type="button" role="tab" aria-selected={value === option.value} onClick={() => onChange(option.value)} className={cn('shrink-0 border-b-2 px-3 py-3 text-xs font-extrabold sm:px-5', value === option.value ? 'border-black text-black' : 'border-transparent text-black/40')}>{option.label}</button>)}
   </div>
 }
 

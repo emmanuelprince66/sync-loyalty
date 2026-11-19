@@ -16,8 +16,9 @@ export const referralKeys = { all: ['referrals'] as const }
 
 export type ReferralProgramme = { id: string; name: string; rewardPercentage: number; rewardCap: number; notifySms: boolean; notifyEmail: boolean; active: boolean; participants: number; referrals: number; totalPaid: number; capProgress: string; createdAt: string }
 export type ReferralOverview = { programmes: number; participants: number; referrals: number; paidOut: number; conversion: string }
-export type ReferralParticipant = { id: string; code: string; name: string; phone: string; link: string; referrals: number; paid: number; earned: number; createdAt: string }
-export type ProgrammeInput = { name: string; rewardPercentage: string; rewardCap: string; notifySms: boolean; notifyEmail: boolean }
+export type ReferralParticipant = { id: string; code: string; name: string; initials: string; phone: string; link: string; referrals: number; paid: number; earned: number; createdAt: string }
+/** `active` is only sent when editing (Programme settings); the create schema has no is_active. */
+export type ProgrammeInput = { name: string; rewardPercentage: string; rewardCap: string; notifySms: boolean; notifyEmail: boolean; active?: boolean }
 
 const useBusiness = () => {
   const { businessId } = useCurrentBusinessId()
@@ -44,6 +45,13 @@ export const useReferralProgrammes = () => {
   })
 }
 
+/** One programme by id, so its page works when opened directly or refreshed (no list in cache). */
+export const useReferralProgramme = (id: string | undefined) => useQuery({
+  queryKey: [...referralKeys.all, 'programme', id],
+  queryFn: async () => mapProgramme(unwrap(await apiRequest<unknown>(`referral/customer-programmes/${id}/`))),
+  enabled: Boolean(id),
+})
+
 export const useReferralOverview = () => {
   const { businessId, enabled } = useBusiness()
   return useQuery({
@@ -62,7 +70,7 @@ export const useReferralParticipants = (programmeId: string | undefined, search:
     const query = search.trim() ? `?search=${encodeURIComponent(search.trim())}` : ''
     return listFrom(await apiRequest<unknown>(`referral/customer-programmes/${programmeId}/participants/${query}`), ['results.data', 'data.results.data', 'results', 'data']).map((value): ReferralParticipant => {
       const p = asRecord(value)
-      return { id: str(p.id), code: str(p.code), name: str(p.customer_name), phone: str(p.phone), link: str(p.referral_link), referrals: num(p.referrals_count), paid: num(p.paid_count), earned: num(p.total_earned), createdAt: str(p.created_at) }
+      return { id: str(p.id), code: str(p.code), name: str(p.customer_name), initials: str(p.initials), phone: str(p.phone), link: str(p.referral_link), referrals: num(p.referrals_count), paid: num(p.paid_count), earned: num(p.total_earned), createdAt: str(p.created_at) }
     })
   },
   enabled: Boolean(programmeId),
@@ -73,7 +81,8 @@ const useInvalidate = () => {
   return () => client.invalidateQueries({ queryKey: referralKeys.all })
 }
 
-const programmeBody = (input: ProgrammeInput) => ({ name: input.name.trim(), reward_percentage: input.rewardPercentage, reward_cap: Number(input.rewardCap), notify_sms: input.notifySms, notify_email: input.notifyEmail })
+// As sink: the percentage goes up as a decimal string ("5.00"), the cap as a whole number.
+const programmeBody = (input: ProgrammeInput) => ({ name: input.name.trim(), reward_percentage: Number(input.rewardPercentage).toFixed(2), reward_cap: Number(input.rewardCap), notify_sms: input.notifySms, notify_email: input.notifyEmail, ...(input.active === undefined ? {} : { is_active: input.active }) })
 
 export const useSaveProgramme = () => useMutation({
   mutationFn: ({ id, input }: { id?: string; input: ProgrammeInput }) => id

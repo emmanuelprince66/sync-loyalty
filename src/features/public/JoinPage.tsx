@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { errorMessage } from '@/api/auth'
 import { useJoinProgram, usePublicProgram, type JoinInput } from '@/api/loyalty'
+import { LoyaltyCardSkeleton } from '@/components/ui/CardSkeleton'
+import { DateRangeFilter, fromApiDate, toApiDate } from '@/components/ui/DateRangeFilter'
 import { Logo } from '@/components/ui/Logo'
 import { MkButton, inputClass } from '@/components/ui/mk'
 import { cardPath } from '@/routes/paths'
-import { DateRangeFilter, fromApiDate, toApiDate } from '@/components/ui/DateRangeFilter'
-import { LoyaltyCardSkeleton } from '@/components/ui/CardSkeleton'
 
-/** Public: the page behind a programme's QR. Shows the programme and signs the customer up (POST loyalty/join/{token}/). */
+/**
+ * Public: the page behind a programme's QR. Shows the programme and signs the customer up
+ * (POST loyalty/join/{token}/), as sink's join page.
+ */
 export default function JoinPage() {
   const { token = '' } = useParams()
   const navigate = useNavigate()
@@ -17,6 +20,7 @@ export default function JoinPage() {
   const [form, setForm] = useState<JoinInput>({ fullName: '', phone: '', email: '', birthday: '', address: '' })
   const [error, setError] = useState('')
   const set = (key: keyof JoinInput) => (event: React.ChangeEvent<HTMLInputElement>) => setForm(current => ({ ...current, [key]: event.target.value }))
+  const p = program.data
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -29,7 +33,6 @@ export default function JoinPage() {
     })
   }
 
-  const p = program.data
   return <div className="min-h-[100dvh] bg-[#F6F6F2] px-4 py-8">
     <div className="mx-auto max-w-sm">
       <div className="mb-6 flex justify-center"><Logo/></div>
@@ -43,9 +46,9 @@ export default function JoinPage() {
             </div>
             <form onSubmit={submit} className="mt-4 space-y-3 border border-black/10 bg-white p-5">
               <p className="text-sm font-black">Join and get your card</p>
-              <input value={form.fullName} onChange={set('fullName')} autoComplete="name" placeholder="Full name" className={inputClass}/>
-              <input value={form.phone} onChange={set('phone')} type="tel" placeholder="Phone number" className={inputClass}/>
-              <input value={form.email} onChange={set('email')} type="email" placeholder="Email (optional)" className={inputClass}/>
+              <input value={form.fullName} onChange={set('fullName')} autoComplete="name" maxLength={200} placeholder="Full name" className={inputClass}/>
+              <input value={form.phone} onChange={set('phone')} type="tel" inputMode="tel" maxLength={15} autoComplete="tel" placeholder="Phone number" className={inputClass}/>
+              <input value={form.email} onChange={set('email')} type="email" autoComplete="email" placeholder="Email (optional)" className={inputClass}/>
               <input value={form.address} onChange={set('address')} autoComplete="street-address" placeholder="Address (optional)" className={inputClass}/>
               <div><span className="block text-[10px] font-bold text-black/45">Birthday (optional)</span><DateRangeFilter singleDay yearJump max={new Date()} value={form.birthday ? { from: fromApiDate(form.birthday), to: fromApiDate(form.birthday) } : undefined} onChange={next => setForm(current => ({ ...current, birthday: toApiDate(next?.from) }))} placeholder="Pick your birthday" align="start" className="mt-1 w-full" triggerClassName="h-11 rounded-none border-black/15"/></div>
               {error && <p role="alert" className="bg-[#FFE6DD] px-3 py-2 text-xs font-bold text-[#B43A16]">{error}</p>}

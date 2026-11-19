@@ -15,7 +15,7 @@ export default function OverviewPage() {
 
     {page.isError
       ? <Card><ErrorBlock text="We couldn’t load your loyalty numbers." onRetry={page.retry}/></Card>
-      : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      : <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {page.isLoading
           ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} dark={index === 0}/>)
           : page.metrics.map(metric => <Metric key={metric.label} label={metric.label} value={metric.value} detail={metric.detail} icon={icons[metric.icon]} dark={metric.dark}/>)}
@@ -50,7 +50,7 @@ export default function OverviewPage() {
         ? <CardGridSkeleton count={3} gridClassName="grid gap-px lg:grid-cols-3" footer={2} cardClassName="border-0"/>
         : page.livePrograms.length === 0
           ? <EmptyBlock title="No live programs yet" text="Create a loyalty program to start rewarding customers who come back." action={page.canCreate && <MkButton onClick={page.create}><Plus size={14}/>Create loyalty</MkButton>}/>
-          : <div className="grid divide-y divide-black/10 lg:grid-cols-3 lg:divide-x lg:divide-y-0">{page.livePrograms.map(program => <button key={program.id} type="button" onClick={() => page.openProgram(program.id)} className="p-5 text-left hover:bg-[#FAFAF7]">
+          : <div className="grid grid-cols-[minmax(0,1fr)] divide-y divide-black/10 lg:grid-cols-3 lg:divide-x lg:divide-y-0">{page.livePrograms.map(program => <button key={program.id} type="button" onClick={() => page.openProgram(program.id)} className="min-w-0 p-5 text-left hover:bg-[#FAFAF7]">
             <span className="block h-2 w-12" style={{ background: colour }}/>
             <div className="mt-5 flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-black">{program.name}</p><p className="mt-1 truncate text-[10px] text-black/45">{program.triggerSummary || program.rewardSummary}</p></div><Badge>LIVE</Badge></div>
             <div className="mt-6 flex items-end justify-between"><div><p className="text-[9px] text-black/40">MEMBERS</p><b>{program.enrolled.toLocaleString()}</b></div><div className="text-right"><p className="text-[9px] text-black/40">COMPLETION</p><b>{program.completionRate ? `${program.completionRate.toFixed(0)}%` : '—'}</b></div></div>
