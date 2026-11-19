@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Crown, PenLine, Plus, ShieldCheck, Trash2 } from 'lucide-react'
+import { Crown, PenLine, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
 import { useDeleteTier, useSaveTier, useTiers, type LoyaltyTier, type TierInput } from '@/api/loyalty'
@@ -8,6 +8,7 @@ import { CARD_COLOURS, Card, EmptyBlock, MkButton, PageHeading, inputClass, labe
 import { cn } from '@/lib/cn'
 import { paths } from '@/routes/paths'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
+import { StoreColourPicker } from '@/features/loyalty/components/StoreColourPicker'
 import { MkModal } from '@/components/ui/MkModal'
 
 const emptyTier = (rank: number): TierInput => ({ name: '', rank, metric: 'SPEND', threshold: '', color: '#D7FF45' })
@@ -45,7 +46,8 @@ function useSettings() {
 export default function SettingsPage() {
   const s = useSettings()
   return <div className="space-y-5">
-    <PageHeading title="Settings" subtitle="Membership tiers, your business verification and your plan."/>
+    <PageHeading title="Settings" subtitle="Your store colour, membership tiers and your plan."/>
+    <Card className="p-5"><StoreColourPicker/></Card>
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-black/10 p-5"><div><h3 className="text-sm font-black">Membership tiers</h3><p className="mt-1 text-[10px] text-black/45">Members move up as their lifetime spend or visits grow</p></div><MkButton onClick={s.add}><Plus size={14}/>Add tier</MkButton></div>
       {s.isLoading ? <TableSkeleton header={false} rows={3} columns={[{ thumbnail: true, flex: true, twoLine: true }, { width: 'w-20', alignRight: true }]}/>
@@ -66,10 +68,12 @@ export default function SettingsPage() {
         <div><span className={labelClass}>Badge colour</span><div className="mt-2 flex gap-2">{CARD_COLOURS.map(colour => <button key={colour} type="button" aria-label={`Colour ${colour}`} onClick={() => s.change({ color: colour })} className={cn('h-8 w-8 rounded-full border-2', s.editing?.input.color === colour ? 'border-black p-1' : 'border-transparent')}><i className="block h-full w-full rounded-full" style={{ background: colour }}/></button>)}</div></div>
       </div>}
     </MkModal>
+    {/* KYC is switched off in maheleKart for now (commented out, not deleted).
     <Card className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
       <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-[#D7FF45]"><ShieldCheck size={16}/></span><div><p className="text-sm font-black">Business verification</p><p className="text-[10px] text-black/45">Complete KYC to buy message credits from your wallet.</p></div></div>
       <MkButton secondary onClick={s.goToKyc}>Open KYC</MkButton>
     </Card>
+    */}
     <Card className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
       <div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-black text-[#D7FF45]"><Crown size={16}/></span><div className="min-w-0"><p className="text-sm font-black">Plan & billing</p><p className="text-[10px] text-black/45">Your Sync360 plan, shared usage and upgrades. Loyalty is unlimited on every plan.</p></div></div>
       <MkButton secondary onClick={s.goToPlan}>View plan</MkButton>

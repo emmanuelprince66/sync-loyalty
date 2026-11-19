@@ -6,7 +6,7 @@ import { GuestOnly, RequireAuth, RequireBusiness, RequirePage } from './guards'
 import { pages } from './pages'
 import { paths } from './paths'
 
-const { AuthPage, SelectBusinessPage, OverviewPage, LoyaltyPage, ProgramDetailPage, CustomersPage, CustomerDetailPage, ScannerPage, CardStudioPage, MessagesPage, RewardsPage, CustomerWalletPage, SettingsPage, SegmentsPage, InsightsPage, ReferralsPage, ReferralProgrammePage, ImportCustomersPage, KycPage, PlanPage, JoinPage, MemberCardPage } = pages
+const { AuthPage, SelectBusinessPage, OverviewPage, LoyaltyPage, ProgramDetailPage, CustomersPage, CustomerDetailPage, ScannerPage, MessagesPage, RewardsPage, CustomerWalletPage, SettingsPage, SegmentsPage, InsightsPage, ReferralsPage, ReferralProgrammePage, ImportCustomersPage, PlanPage, JoinPage, MemberCardPage } = pages
 
 const withLoader = (element: React.ReactNode) => <Suspense fallback={<AppLoader/>}>{element}</Suspense>
 
@@ -40,7 +40,8 @@ export const router = createBrowserRouter([
               { path: paths.customers, element: <CustomersPage/> },
               { path: paths.customerDetail, element: <CustomerDetailPage/> },
               { path: paths.scanner, element: <ScannerPage/> },
-              { path: paths.cardStudio, element: <CardStudioPage/> },
+              // Card studio is switched off: sink has none; the join card lives on each programme (QR) and takes the store colour.
+              // { path: paths.cardStudio, element: <CardStudioPage/> },
               { path: paths.messages, element: <MessagesPage/> },
               { path: paths.rewards, element: <RewardsPage/> },
               { path: paths.wallet, element: <CustomerWalletPage/> },
@@ -50,7 +51,8 @@ export const router = createBrowserRouter([
               { path: paths.referrals, element: <ReferralsPage/> },
               { path: paths.referralProgramme, element: <ReferralProgrammePage/> },
               { path: paths.importCustomers, element: <ImportCustomersPage/> },
-              { path: paths.kyc, element: <KycPage/> },
+              // KYC is switched off in maheleKart for now (commented out, not deleted).
+              // { path: paths.kyc, element: <KycPage/> },
               { path: paths.plan, element: <PlanPage/> },
             ],
           }],

@@ -52,7 +52,8 @@ export function useBusinessSetup() {
       onSuccess: business => {
         toast.success('Business Created Successfully')
         activate(business)
-        navigate(paths.signupKyc)
+        // KYC is switched off in maheleKart for now (commented out, not deleted). Was: navigate(paths.signupKyc)
+        navigate(paths.dashboard, { replace: true })
       },
       onError: error => toast.error(errorMessage(error, "Couldn't create your business. Please try again.")),
     },

@@ -49,9 +49,9 @@ export default function ScannerPage() {
       <Card className="p-6">
         <p className="text-[10px] font-extrabold uppercase tracking-wider text-black/40">No QR?</p>
         <h3 className="mt-2 text-xl font-black">Find member manually</h3>
-        <form onSubmit={event => { event.preventDefault(); s.submitQuery() }} className="mt-6 flex h-12 items-center border border-black/15 px-4">
-          <Search size={15}/><input value={s.query} onChange={event => s.setQuery(event.target.value)} className="w-full px-3 text-xs outline-none" placeholder="Member code, phone or name"/>
-          <button type="submit" aria-label="Find"><ArrowRight size={16}/></button>
+        <form onSubmit={event => { event.preventDefault(); s.submitQuery() }} className="mt-6 flex h-12 items-center gap-2 border border-black/15 pl-4 pr-1.5">
+          <Search size={15}/><input value={s.query} onChange={event => s.setQuery(event.target.value)} className="min-w-0 flex-1 px-1 text-xs outline-none" placeholder="Member code, phone or name"/>
+          <button type="submit" aria-label="Find" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black text-white hover:bg-[#272727]"><ArrowRight size={15}/></button>
         </form>
         {(s.matches.length > 0 || s.searching) && <div className="mt-2 max-h-56 divide-y divide-black/10 overflow-y-auto border border-black/10">
           {s.searching && s.matches.length === 0 ? <p className="p-3 text-[10px] text-black/40">Searching…</p> : s.matches.map(member => <button key={member.id || member.code} type="button" disabled={!member.code} onClick={() => s.pick(member.code)} className="flex w-full items-center justify-between gap-3 p-3 text-left disabled:opacity-50">

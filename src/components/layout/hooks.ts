@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { kycProgress, useKycStatus } from '@/api/kyc'
+// import { kycProgress, useKycStatus } from '@/api/kyc' // KYC is switched off in maheleKart for now
 import { useUnreadNotifications } from '@/api/notifications'
 import { formatLongDate, initials } from '@/lib/format'
 import { paths } from '@/routes/paths'
@@ -36,9 +36,11 @@ export function useMobileSidebar() {
 
 /** Verification progress for the sidebar card, read from the shared wallet payload. */
 function useVerification() {
-  const { data: kyc } = useKycStatus()
-  const { percent, complete } = kycProgress(kyc)
-  return { loaded: Boolean(kyc), tier: kyc?.tier ?? 0, percent, complete }
+  // KYC is switched off in maheleKart for now (commented out, not deleted).
+  // const { data: kyc } = useKycStatus()
+  // const { percent, complete } = kycProgress(kyc)
+  // return { loaded: Boolean(kyc), tier: kyc?.tier ?? 0, percent, complete }
+  return { loaded: false, tier: 0, percent: 0, complete: true }
 }
 
 /** Sidebar data: business / customer view switch, verification card, account block. */
@@ -94,7 +96,9 @@ export function useTopbar() {
   const user = useAuthStore(state => state.user)
   const logout = useAuthStore(state => state.logout)
   const business = useBusinessDataStore(state => state.businessData)
-  const { data: kyc } = useKycStatus()
+  // KYC is switched off in maheleKart for now (commented out, not deleted).
+  // const { data: kyc } = useKycStatus()
+  const kyc = null as { tier?: number } | null
   const { data: unread = 0 } = useUnreadNotifications()
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = useCallback(() => setMenuOpen(false), [])

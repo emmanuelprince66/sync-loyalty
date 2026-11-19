@@ -1,10 +1,12 @@
-import { ArrowLeft, Copy, Palette, Pause, PenLine, Play, Trash2 } from 'lucide-react'
+import { ArrowLeft, Pause, PenLine, Play, Trash2 } from 'lucide-react'
+import { useLoyaltyTheme } from '@/api/storeTheme'
 import { formatActivityDate } from '@/api/http'
 import { Badge, Card, Chips, EmptyBlock, ErrorBlock, MkButton, Tabs, initialsOf } from '@/components/ui/mk'
 import { cn } from '@/lib/cn'
 import { BonusPeriods } from './components/BonusPeriods'
 import { JoinQrCard } from './components/JoinQrCard'
 import { EditProgramModal } from './components/EditProgramModal'
+import { StoreColourPicker } from './components/StoreColourPicker'
 import { statusLabel } from './hooks/useLoyaltyPage'
 import { PARTICIPANT_FILTERS, useProgramDetail, type DetailTab, type ProgramDetailModel } from './hooks/useProgramDetail'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
@@ -72,17 +74,21 @@ function Participants({ page }: { page: ProgramDetailModel }) {
 
 function QrPanel({ page }: { page: ProgramDetailModel }) {
   const program = page.program
-  return <Card className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,.9fr)] lg:items-start">
-    <JoinQrCard businessName={page.businessName} programName={program?.name ?? ''} rewardSummary={program?.rewardSummary ?? ''} triggerSummary={program?.triggerSummary ?? ''} stamps={program?.visitTarget ?? 0} joinUrl={page.joinUrl} colour={page.colour}/>
-    <div className="min-w-0">
-      <p className="text-[10px] font-extrabold uppercase tracking-wider text-black/40">Join QR</p>
-      <h3 className="mt-2 text-2xl font-black tracking-[-.04em]">Customers scan to join</h3>
-      <p className="mt-2 text-xs leading-relaxed text-black/55">Download or print this card and put it at the counter, on tables or on receipts. Scanning opens the join page, and their loyalty card is ready straight away.</p>
-      {page.joinUrl && <button type="button" onClick={page.copyLink} className="mt-5 flex w-full items-center justify-between gap-3 border border-black/15 bg-white p-3 text-left text-[11px] font-bold hover:border-black"><span className="truncate">{page.joinUrl}</span><Copy size={14} className="shrink-0"/></button>}
-      {page.copied && <p className="mt-2 text-[11px] font-bold text-[#237A49]">Link copied</p>}
-      <MkButton secondary onClick={page.openCardStudio} className="mt-4"><Palette size={14}/>More poster designs</MkButton>
+  if (!page.isLoading && !page.joinUrl) return <Card><EmptyBlock title="No QR code yet" text="This program’s join QR hasn’t been generated. Check back shortly."/></Card>
+  return <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start">
+    <Card className="min-w-0 p-4 sm:p-5">
+      <p className="mb-3 text-[10px] font-extrabold uppercase tracking-wider text-black/40">Campaign QR card</p>
+      <JoinQrCard variant="full" businessName={page.businessName} programName={program?.name ?? ''} rewardSummary={program?.rewardSummary ?? ''} triggerSummary={program?.triggerSummary ?? ''} stamps={program?.visitTarget ?? 0} joinUrl={page.joinUrl} previewUrl={page.previewUrl}/>
+    </Card>
+    <div className="min-w-0 space-y-5">
+      <Card className="p-5">
+        <p className="text-[10px] font-extrabold uppercase tracking-wider text-black/40">Join QR</p>
+        <h3 className="mt-2 text-xl font-black tracking-[-.04em] sm:text-2xl">Customers scan to join</h3>
+        <p className="mt-2 text-xs leading-relaxed text-black/55">Download or print this card and put it at the counter, on tables or on receipts. Scanning opens the sign-up page, and their loyalty card is ready straight away.</p>
+      </Card>
+      <Card className="p-5"><StoreColourPicker canEdit={page.canManage}/></Card>
     </div>
-  </Card>
+  </div>
 }
 
 function Report({ page }: { page: ProgramDetailModel }) {
@@ -113,12 +119,13 @@ function Report({ page }: { page: ProgramDetailModel }) {
 
 export default function ProgramDetailPage() {
   const page = useProgramDetail()
+  const theme = useLoyaltyTheme()
   if (page.isError) return <div className="space-y-5"><BackLink onClick={page.back}/><Card><ErrorBlock text="We couldn’t load this program." onRetry={page.retry}/></Card></div>
   const program = page.program
   return <div className="space-y-5">
     <BackLink onClick={page.back}/>
     <Card className="overflow-hidden">
-      <div className="h-3" style={{ background: page.colour }}/>
+      <div className="h-3" style={{ background: theme.base }}/>
       <div className="p-6">
         {page.isLoading || !program
           ? <div className="space-y-3"><div className="h-5 w-16 animate-pulse bg-[#ECECE8]"/><div className="h-8 w-56 animate-pulse bg-[#ECECE8]"/></div>
@@ -146,6 +153,6 @@ export default function ProgramDetailPage() {
     {page.tab === 'participants' && <Participants page={page}/>}
     {page.tab === 'qr' && <QrPanel page={page}/>}
     {page.tab === 'report' && <Report page={page}/>}
-    <EditProgramModal page={page}/>
+    <EditProgramModal page={page.editor}/>
   </div>
 }

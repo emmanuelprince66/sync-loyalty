@@ -7,7 +7,8 @@ export function useKycStep() {
   return {
     benefits: KYC_BENEFITS,
     /** The same verification the app links to everywhere; the business was just created and selected. */
-    startKyc: () => navigate(paths.kyc, { replace: true }),
+    // KYC is switched off in maheleKart for now (commented out, not deleted). Was: navigate(paths.kyc, { replace: true })
+    startKyc: () => navigate(paths.dashboard, { replace: true }),
     finish: () => navigate(paths.dashboard, { replace: true }),
   }
 }

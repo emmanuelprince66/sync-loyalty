@@ -53,24 +53,24 @@ export function CustomersSheet({ open, onOpenChange, onSelect, selectedId }: { o
             <div><Dialog.Title className="text-lg font-black">Select customer</Dialog.Title><Dialog.Description className="text-[11px] text-black/45">Choose an existing customer or create a new one</Dialog.Description></div>
             <button type="button" aria-label="Close" onClick={() => onOpenChange(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black text-white"><X size={15}/></button>
           </div>
-          <div className="space-y-2 border-b border-black/10 bg-white p-4">
+          <div className="space-y-3 border-b border-black/10 bg-white p-4">
             <label className="flex h-11 items-center gap-2 rounded-full bg-[#F1F1ED] px-4"><Search size={14} className="shrink-0 text-black/45"/><input autoFocus value={search} onChange={event => { setSearch(event.target.value); setPage(1) }} placeholder="Search customers…" aria-label="Search customers" className="w-full bg-transparent text-sm outline-none"/>{query.isFetching && <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-black/30 border-t-transparent"/>}</label>
             {canAddCustomers && <button type="button" onClick={() => setCreating(true)} className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-black text-xs font-extrabold text-white hover:bg-[#272727]"><Plus size={15}/>Create customer</button>}
           </div>
-          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
-            {query.isLoading ? Array.from({ length: 6 }, (_, index) => <div key={index} role="status" aria-label="Loading" className="flex items-center gap-3 rounded-2xl border border-black/10 bg-white p-3"><span className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-[#ECECE8]"/><span className="min-w-0 flex-1 space-y-2"><span className="block h-3 w-1/2 animate-pulse bg-[#ECECE8]"/><span className="block h-2.5 w-2/3 animate-pulse bg-[#ECECE8]"/><span className="flex gap-1.5">{[14, 16, 12].map(width => <span key={width} className="h-4 animate-pulse rounded-full bg-[#ECECE8]" style={{ width: width * 4 }}/>)}</span></span></div>)
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+            {query.isLoading ? Array.from({ length: 6 }, (_, index) => <div key={index} role="status" aria-label="Loading" className="flex items-center gap-3 rounded-2xl border border-black/10 bg-white p-4"><span className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-[#ECECE8]"/><span className="min-w-0 flex-1 space-y-2"><span className="block h-3 w-1/2 animate-pulse bg-[#ECECE8]"/><span className="block h-2.5 w-2/3 animate-pulse bg-[#ECECE8]"/><span className="flex gap-1.5">{[14, 16, 12].map(width => <span key={width} className="h-4 animate-pulse rounded-full bg-[#ECECE8]" style={{ width: width * 4 }}/>)}</span></span></div>)
               : query.isError ? <div className="rounded-2xl bg-[#FFE6DD] p-4 text-center"><p className="text-sm font-bold text-[#B43A16]">Could not load customers.</p><button type="button" onClick={() => { void query.refetch() }} className="mt-2 text-xs font-extrabold underline">Try again</button></div>
                 : customers.length === 0 ? <p className="p-6 text-center text-sm text-black/45">{debounced ? `No customers match “${debounced}”.` : 'No customers yet.'}</p>
                   : customers.map(customer => {
                     const tier = tierStyle(customer.tier)
                     const TierIcon = tier.icon
                     const active = customer.id === selectedId
-                    return <button key={customer.id} type="button" onClick={() => onSelect(customer)} className={cn('flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition', active ? 'border-black bg-white ring-2 ring-[#D7FF45]' : 'border-black/10 bg-white hover:border-black')}>
+                    return <button key={customer.id} type="button" onClick={() => onSelect(customer)} className={cn('flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition', active ? 'border-black bg-white ring-2 ring-[#D7FF45]' : 'border-black/10 bg-white hover:border-black')}>
                       <span className={cn('grid h-11 w-11 shrink-0 place-items-center rounded-full text-xs font-extrabold', toneOf(customer.id || customer.name))}>{initialsOf(customer.name)}</span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-extrabold">{customer.name}</span>
                         <span className="mt-0.5 block truncate text-[11px] text-black/45">{customer.phone || 'No phone'} · {money(customer.totalSpent)} spent</span>
-                        <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <span className="mt-2.5 flex flex-wrap items-center gap-x-1.5 gap-y-2">
                           {customer.tier && <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold', tier.className)}><TierIcon size={11}/>{customer.tier}</span>}
                           {customer.loyaltyCode ? <span className="rounded-full bg-black px-2 py-0.5 text-[10px] font-bold text-white">{customer.loyaltyCode}</span> : <span className="rounded-full bg-[#F0F0EC] px-2 py-0.5 text-[10px] font-bold text-black/45">Not a member</span>}
                           <span className="text-[10px] text-black/40">{customer.rewardCount} rewards</span>

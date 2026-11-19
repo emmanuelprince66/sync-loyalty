@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from './query-keys'
 import { requireBusinessId, useCurrentBusiness } from './business'
@@ -61,11 +62,49 @@ export const useSaveCardColour = () => {
   return useMutation({ mutationFn: saveStoreTheme, onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.business }) })
 }
 
-/** True when white text reads better on this colour (sink's onBase: contrast with white of 4.5 or more). */
-export const isDarkColour = (hex: string) => {
+const rgb = (hex: string) => {
   const v = hex.replace('#', '')
   const full = v.length === 3 ? v.split('').map(c => c + c).join('') : v
-  const channel = (i: number) => { const c = parseInt(full.slice(i, i + 2), 16) / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4 }
-  const lum = 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4)
-  return 1.05 / (lum + 0.05) >= 4.5
+  return [0, 2, 4].map(i => parseInt(full.slice(i, i + 2), 16))
+}
+const toHex = (channels: number[]) => `#${channels.map(c => Math.round(Math.min(255, Math.max(0, c))).toString(16).padStart(2, '0')).join('')}`
+/** `hex` moved `amount` (0–1) of the way to `target`. */
+const mix = (hex: string, target: string, amount: number) => { const a = rgb(hex), b = rgb(target); return toHex(a.map((c, i) => c + (b[i] - c) * amount)) }
+const luminance = (hex: string) => {
+  const [r, g, b] = rgb(hex).map(c => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const contrastWithWhite = (hex: string) => 1.05 / (luminance(hex) + 0.05)
+
+/** True when white text reads better on this colour (sink's onBase: contrast with white of 4.5 or more). */
+export const isDarkColour = (hex: string) => contrastWithWhite(hex) >= 4.5
+
+/**
+ * sink's LoyaltyTheme: every card, QR and accent is drawn from the one store colour.
+ *  base     the store colour (card header, footer, reward stamp)
+ *  dark     base darkened (the header's gradient end)
+ *  onBase   text on base (black or white, whichever reads)
+ *  surface  a pale tint (the reward box); surfaceBorder its border, and the stamp rings
+ *  qrFg     base darkened until it clears 7:1 on white, so the QR carries the brand without costing a scan
+ */
+export type LoyaltyTheme = { base: string; dark: string; onBase: string; surface: string; surfaceBorder: string; qrFg: string }
+
+export const buildLoyaltyTheme = (colour: string): LoyaltyTheme => {
+  const base = HEX.test(colour) ? colour : DEFAULT_CARD_COLOUR
+  let qrFg = base
+  for (let step = 1; contrastWithWhite(qrFg) < 7 && step <= 12; step += 1) qrFg = mix(base, '#000000', step / 12)
+  return {
+    base,
+    dark: mix(base, '#000000', 0.28),
+    onBase: isDarkColour(base) ? '#ffffff' : '#000000',
+    surface: mix(base, '#ffffff', 0.86),
+    surfaceBorder: mix(base, '#ffffff', 0.55),
+    qrFg,
+  }
+}
+
+/** The current store's theme (business.store_theme). */
+export const useLoyaltyTheme = () => {
+  const colour = useCardColour()
+  return useMemo(() => buildLoyaltyTheme(colour), [colour])
 }

@@ -4,12 +4,12 @@ import { MkButton, inputClass, labelClass } from '@/components/ui/mk'
 import { cn } from '@/lib/cn'
 import { DateRangeFilter, fromApiDate, toApiDate } from '@/components/ui/DateRangeFilter'
 import { REWARDS, TIMEOUT_ACTIONS } from '../hooks/useCreateLoyalty'
-import type { ProgramDetailModel } from '../hooks/useProgramDetail'
+import type { ProgramEditor } from '../hooks/useProgramEditor'
 
 const field = cn(inputClass, 'mt-2')
 
 /** sink's Edit Campaign form (AddLoyaltyProgram with editData), in the design's style. */
-export function EditProgramModal({ page }: { page: ProgramDetailModel }) {
+export function EditProgramModal({ page }: { page: ProgramEditor }) {
   const e = page.editing
   const notifyRows = [
     ['notifyWelcome', 'Welcome message'], ['notifyProgress', 'Progress updates'], ['notifyRewardReady', 'Reward ready'], ['notifyExpiry', 'Expiry reminder'],

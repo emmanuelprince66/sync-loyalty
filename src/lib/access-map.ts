@@ -35,7 +35,7 @@ export type AccessArea = keyof typeof ACCESS
 export const PAGE_AREAS: readonly (readonly [string, AccessArea])[] = [
   ['/loyalty', 'loyalty'],
   ['/scanner', 'scanner'],
-  ['/card-studio', 'manageLoyalty'],
+  // ['/card-studio', 'manageLoyalty'], // Card studio is switched off: sink has none; the join card lives on each programme (QR) and takes the store colour.
   ['/rewards', 'rewards'],
   ['/customers/import', 'addCustomers'],
   ['/customers', 'customers'],
@@ -44,6 +44,6 @@ export const PAGE_AREAS: readonly (readonly [string, AccessArea])[] = [
   ['/referrals', 'loyalty'],
   ['/messages', 'messages'],
   ['/settings', 'setup'],
-  ['/kyc', 'setup'],
+  // ['/kyc', 'setup'], // KYC is switched off in maheleKart for now (commented out, not deleted).
   ['/plan', 'setup'],
 ]

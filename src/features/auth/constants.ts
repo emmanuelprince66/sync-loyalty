@@ -2,7 +2,8 @@ export type AuthStage = 'access' | 'otp' | 'business' | 'kyc'
 export type AccessMode = 'login' | 'signup'
 
 /** Onboarding stages shown in the "Account setup · Step x of 3" bar. */
-export const SETUP_STAGES: AuthStage[] = ['otp', 'business', 'kyc']
+// KYC is switched off in maheleKart for now (commented out, not deleted). Was: ['otp', 'business', 'kyc']
+export const SETUP_STAGES: AuthStage[] = ['otp', 'business']
 
 /** URL segment after /signup/ → stage. */
 export const STEP_TO_STAGE: Record<string, AuthStage> = { verify: 'otp', business: 'business', kyc: 'kyc' }

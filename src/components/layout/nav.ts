@@ -1,4 +1,4 @@
-import { BarChart3, Gift, LayoutDashboard, MessageSquare, Palette, PieChart, ScanLine, Share2, Smartphone, Trophy, Users, type LucideIcon } from 'lucide-react'
+import { BarChart3, Gift, LayoutDashboard, MessageSquare, PieChart, ScanLine, Share2, Smartphone, Trophy, Users, type LucideIcon } from 'lucide-react'
 import { paths } from '@/routes/paths'
 
 export type NavItem = { id: string; label: string; icon: LucideIcon; to: string }
@@ -14,7 +14,8 @@ export const navItems: NavItem[] = [
   { id: 'rewards', label: 'Rewards', icon: Gift, to: paths.rewards },
   { id: 'messages', label: 'Messages', icon: MessageSquare, to: paths.messages },
   { id: 'referrals', label: 'Referrals', icon: Share2, to: paths.referrals },
-  { id: 'cardStudio', label: 'Card studio', icon: Palette, to: paths.cardStudio },
+  // Card studio is switched off: sink has none; the join card lives on each programme (QR) and takes the store colour.
+  // { id: 'cardStudio', label: 'Card studio', icon: Palette, to: paths.cardStudio },
 ]
 
 /** Customer view: what members see on their phones. */

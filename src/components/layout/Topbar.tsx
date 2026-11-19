@@ -1,5 +1,5 @@
 import { Bell, Menu } from 'lucide-react'
-import { cn } from '@/lib/cn'
+// import { cn } from '@/lib/cn' // only used by the KYC badge, switched off for now
 import { useMobileSidebar, useTopbar } from './hooks'
 import { ProfileMenu } from './ProfileMenu'
 
@@ -17,7 +17,9 @@ export function Topbar() {
           <span className="hidden sm:inline">Welcome back{bar.firstName && ', '}</span>
           {bar.firstName ? <span className="bg-[linear-gradient(transparent_62%,#D7FF45_62%)] px-0.5">{bar.firstName}</span> : <span className="sm:hidden">Welcome back</span>}
         </p>
+        {/* KYC is switched off in maheleKart for now (commented out, not deleted).
         {bar.verification && <button type="button" onClick={bar.goToKyc} className={cn('shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-extrabold sm:px-2 sm:text-[11px]', bar.verification.ok ? 'bg-[#D7FF45] text-black' : 'bg-[#FFF7DF] text-[#8F5F00]')}>{bar.verification.text}</button>}
+        */}
       </div>
       <p className="hidden truncate text-[11px] font-semibold text-black/45 sm:block">{bar.businessName ? `Managing ${bar.businessName}` : 'Dashboard overview'} · {bar.date}</p>
     </div>

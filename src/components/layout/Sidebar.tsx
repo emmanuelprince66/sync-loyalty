@@ -1,4 +1,4 @@
-import { Crown, HelpCircle, LogOut, MoreHorizontal, Settings, ShieldCheck, Shuffle, X, type LucideIcon } from 'lucide-react'
+import { Crown, HelpCircle, LogOut, MoreHorizontal, Settings, Shuffle, X, type LucideIcon } from 'lucide-react'
 import { useRef, type CSSProperties } from 'react'
 import { NavLink } from 'react-router'
 import { Logo } from '@/components/ui/Logo'
@@ -46,7 +46,7 @@ function AccountBlock({ model }: { model: SidebarModel }) {
         <p className="mt-1 text-[9px] font-extrabold uppercase tracking-wider text-black">{model.roleLabel}</p>
       </div>
       <div className="mt-1 flex flex-col gap-0.5">
-        <MenuItem icon={ShieldCheck} label="KYC verification" onClick={model.goToKyc}/>
+        {/* KYC is switched off in maheleKart for now (commented out, not deleted). <MenuItem icon={ShieldCheck} label="KYC verification" onClick={model.goToKyc}/> */}
         <MenuItem icon={Shuffle} label="Switch business" onClick={model.switchBusiness}/>
         <div className="mx-2 my-0.5 border-t border-black/10"/>
         <MenuItem icon={LogOut} label="Log out" danger onClick={model.signOut}/>
@@ -79,7 +79,7 @@ export function Sidebar() {
   const model = useSidebar()
   const { open, close } = useMobileSidebar()
   const { canOpen, canManageSetup } = usePermissions()
-  const { verification } = model
+  // const { verification } = model // only used by the KYC card, switched off for now
   const drawerRef = useRef<HTMLElement>(null)
   // On large screens the sidebar is always there, so this only ever dismisses the drawer.
   useDismiss(drawerRef, open, close)
@@ -98,6 +98,7 @@ export function Sidebar() {
       </div>
 
       <div className="mt-auto shrink-0 border-t border-white/10 px-3 pb-4 pt-4">
+        {/* KYC is switched off in maheleKart for now (commented out, not deleted).
         {verification.loaded && !verification.complete && <button type="button" onClick={model.goToKyc} className="mx-1 mb-4 block w-[calc(100%-0.5rem)] rounded-xl border border-white/10 bg-[#141414] p-4 text-left">
           <span className="mb-3 flex items-center justify-between">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#D7FF45]/15 text-[#D7FF45]"><ShieldCheck size={16}/></span>
@@ -107,6 +108,7 @@ export function Sidebar() {
           <span className="mt-1 block text-[10px] leading-4 text-white/50">Verify your business to unlock everything.</span>
           <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-[#D7FF45]" style={{ width: `${verification.percent}%` }}/></span>
         </button>}
+        */}
         <button type="button" onClick={model.openHelp} className={footerLink}><HelpCircle size={17}/> Help & support</button>
         {canManageSetup && <button type="button" onClick={model.openPlan} className={footerLink}><Crown size={17}/> Plan & billing</button>}
         {canManageSetup && <button type="button" onClick={model.openSettings} className={footerLink}><Settings size={17}/> Settings</button>}

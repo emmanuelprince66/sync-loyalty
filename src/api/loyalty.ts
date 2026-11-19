@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { apiRequest } from '@/lib/api-client'
 import { requireBusinessId, useCurrentBusinessId } from './business'
 import { asRecord, listFrom, num, str, type UnknownRecord } from './http'
@@ -49,6 +49,10 @@ export type LoyaltyProgram = {
   completions: number
   completionRate: number
   retentionRate: number
+  /** sink's campaign card: members who finished, rewards cancelled, and what was given out (in the reward's own unit). */
+  completedMembers: number
+  cancelledRewards: number
+  givenOutValue: number
   startDate: string
   qrUrl: string
   visitTarget: number
@@ -140,6 +144,9 @@ const mapProgram = (value: unknown): LoyaltyProgram => {
     completions: num(p.completions_count ?? p.completions),
     completionRate: num(p.completion_rate),
     retentionRate: num(p.retention_rate),
+    completedMembers: num(p.completed_members_count ?? p.completions_count),
+    cancelledRewards: num(p.cancelled_rewards_count),
+    givenOutValue: num(p.total_rewards_given_out_value),
     startDate: str(p.start_date),
     qrUrl: str(p.qr_url),
     visitTarget: conditionTarget(conditions, 'VISIT'),
@@ -252,11 +259,12 @@ const getProgram = async (id: string): Promise<ProgramDetail> => {
   }
 }
 
-export const useProgram = (id: string | undefined) => useQuery({
-  queryKey: [...loyaltyKeys.all, 'program', id],
-  queryFn: () => getProgram(id as string),
-  enabled: Boolean(id),
-})
+const programQuery = (id: string) => ({ queryKey: [...loyaltyKeys.all, 'program', id], queryFn: () => getProgram(id) })
+
+export const useProgram = (id: string | undefined) => useQuery({ ...programQuery(id ?? ''), enabled: Boolean(id) })
+
+/** The detail on demand (cached if already loaded): the list carries no join token, so Landing page reads it from here, as sink does. */
+export const fetchProgram = (client: QueryClient, id: string) => client.ensureQueryData(programQuery(id))
 
 const getEnrollments = async (id: string): Promise<ProgramMember[]> => {
   return listFrom(await apiRequest<unknown>(`loyalty/programs/${id}/enrollments/`), ['results', 'data', 'results.data']).map(mapMember)

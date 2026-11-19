@@ -20,7 +20,8 @@ const loaders = {
   referrals: () => import('@/features/referrals/ReferralsPage'),
   referralProgramme: () => import('@/features/referrals/ReferralProgrammePage'),
   importCustomers: () => import('@/features/customers/ImportCustomersPage'),
-  kyc: () => import('@/features/kyc/KycPage'),
+  // KYC is switched off in maheleKart for now (commented out, not deleted).
+  // kyc: () => import('@/features/kyc/KycPage'),
   plan: () => import('@/features/plan/PlanPage'),
   join: () => import('@/features/public/JoinPage'),
   card: () => import('@/features/public/MemberCardPage'),
@@ -35,7 +36,7 @@ export const pages = {
   CustomersPage: lazy(loaders.customers),
   CustomerDetailPage: lazy(loaders.customerDetail),
   ScannerPage: lazy(loaders.scanner),
-  CardStudioPage: lazy(loaders.cardStudio),
+  // CardStudioPage: lazy(loaders.cardStudio), // Card studio is switched off: sink has none; the join card lives on each programme (QR) and takes the store colour.
   MessagesPage: lazy(loaders.messages),
   RewardsPage: lazy(loaders.rewards),
   CustomerWalletPage: lazy(loaders.wallet),
@@ -45,7 +46,7 @@ export const pages = {
   ReferralsPage: lazy(loaders.referrals),
   ReferralProgrammePage: lazy(loaders.referralProgramme),
   ImportCustomersPage: lazy(loaders.importCustomers),
-  KycPage: lazy(loaders.kyc),
+  // KycPage: lazy(loaders.kyc),
   PlanPage: lazy(loaders.plan),
   JoinPage: lazy(loaders.join),
   MemberCardPage: lazy(loaders.card),
