@@ -5,6 +5,7 @@ import { useLoyaltyTheme, type LoyaltyTheme } from '@/api/storeTheme'
 import { MkButton } from '@/components/ui/mk'
 import { QrCodeImage } from '@/components/ui/QrCode'
 import { useClipboard } from '@/hooks/useClipboard'
+import { downloadElementPng, fileNameFrom, printElement } from '@/lib/card-export'
 import { cn } from '@/lib/cn'
 
 /** Stamps drawn on the card. A long streak would make it too tall to print on one page; the reward box still states the real target. */
@@ -93,42 +94,22 @@ export function JoinQrCard({ variant = 'compact', previewUrl, ...content }: Card
   const [busy, setBusy] = useState<'download' | 'print' | null>(null)
   const { copy, copied } = useClipboard()
   const { joinUrl, programName } = content
-  const fileName = `${(programName || 'loyalty').replace(/[^a-zA-Z0-9]+/g, '_')}_loyalty_card.png`
-
-  const render = async () => {
-    if (!cardRef.current) throw new Error('No card')
-    const { default: html2canvas } = await import('html2canvas-pro')
-    return html2canvas(cardRef.current, { scale: 3, backgroundColor: null, logging: false })
-  }
+  const fileName = fileNameFrom(programName, 'loyalty_card')
 
   const download = async () => {
     setBusy('download')
     try {
-      const canvas = await render()
-      const link = document.createElement('a')
-      link.download = fileName
-      link.href = canvas.toDataURL('image/png')
-      link.click()
+      await downloadElementPng(cardRef.current, fileName)
       toast.success('Card downloaded')
     } catch {
       toast.error('Could not prepare the card. Try again.')
     } finally { setBusy(null) }
   }
 
-  /** Prints the card alone, centred on the page, from a hidden frame (no pop-up to block). */
   const print = async () => {
     setBusy('print')
     try {
-      const image = (await render()).toDataURL('image/png')
-      const frame = document.createElement('iframe')
-      frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'
-      document.body.appendChild(frame)
-      const doc = frame.contentWindow?.document
-      if (!doc) throw new Error('No frame')
-      doc.open()
-      doc.write(`<!doctype html><title>${programName.replace(/</g, '')}</title><style>@page{margin:12mm}html,body{margin:0;height:100%;display:flex;align-items:center;justify-content:center}img{width:340px;max-width:100%}</style><img src="${image}" onload="setTimeout(function(){window.focus();window.print()},50)">`)
-      doc.close()
-      setTimeout(() => frame.remove(), 60_000)
+      await printElement(cardRef.current, programName)
     } catch {
       toast.error('Could not prepare the card for printing.')
     } finally { setBusy(null) }

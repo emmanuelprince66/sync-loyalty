@@ -572,12 +572,12 @@ export const useMemberWallet = (code: string) => useQuery({
   retry: false,
 })
 
-export type PublicProgram = { businessId: string; businessName: string; businessLogo: string; name: string; description: string; rewardSummary: string; triggerSummary: string }
+export type PublicProgram = { businessId: string; businessName: string; businessLogo: string; /** business.store_theme: hex or preset key. */ storeTheme: string; name: string; description: string; rewardSummary: string; triggerSummary: string }
 
 const getPublicProgram = async (token: string): Promise<PublicProgram> => {
   const raw = asRecord(await apiRequest<unknown>(`loyalty/join/${token}/`, { auth: false }))
   const p = asRecord(raw.data ?? raw)
-  return { businessId: str(p.business_id), businessName: str(p.business_name), businessLogo: str(p.business_logo), name: str(p.name), description: str(p.description), rewardSummary: str(p.reward_summary), triggerSummary: str(p.trigger_summary) }
+  return { businessId: str(p.business_id), businessName: str(p.business_name), businessLogo: str(p.business_logo), storeTheme: str(p.store_theme), name: str(p.name), description: str(p.description), rewardSummary: str(p.reward_summary), triggerSummary: str(p.trigger_summary) }
 }
 
 export const usePublicProgram = (token: string | undefined) => useQuery({

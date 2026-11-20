@@ -4,7 +4,7 @@ import { AUTH_PROOF } from '../constants'
 /** Story panel on the left of every auth screen (desktop only), from the design's .auth-story. */
 export function AuthVisual() {
   return <section className="auth-gradient hidden min-h-screen flex-col px-8 py-8 text-white lg:sticky lg:top-0 lg:flex lg:h-screen xl:px-[45px] xl:py-[34px]">
-    <Logo inverse/>
+    <Logo inverse className="h-12"/>
     <div className="my-auto max-w-[520px] py-10">
       <span className="inline-flex w-max items-center gap-1.5 rounded-full bg-[#D7FF45] px-2 py-1 text-[9px] font-bold text-black">Loyalty for every business</span>
       <h1 className="mb-[13px] mt-4 text-[clamp(36px,4vw,57px)] font-normal leading-[1.02] tracking-[-1.8px]">Loyalty that moves people.</h1>

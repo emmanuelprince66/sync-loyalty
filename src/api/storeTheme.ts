@@ -35,11 +35,14 @@ const getStoreThemes = async (): Promise<{ themes: StoreTheme[]; defaultKey: str
 
 export const useStoreThemes = () => useQuery({ queryKey: ['store-themes'], queryFn: getStoreThemes, staleTime: 60 * 60 * 1000 })
 
+/** sink's FALLBACK_STORE_THEMES: older stores saved one of these keys. Lets public pages (no sign-in, so no themes list) resolve them. */
+const PRESETS: Record<string, string> = { emerald: '#047857', royal: '#1D4ED8', plum: '#7E22CE', indigo: '#4338CA', violet: '#6D28D9', rose: '#BE123C', sunset: '#C2410C', bronze: '#92400E', amber: '#B45309', teal: '#0F766E', charcoal: '#334155' }
+
 /** A stored store_theme (hex or preset key) as a hex. */
-export const resolveCardColour = (value: string, themes: StoreTheme[]) => {
+export const resolveCardColour = (value: string, themes: StoreTheme[] = []) => {
   const trimmed = value.trim()
   if (HEX.test(trimmed)) return trimmed
-  return themes.find(theme => theme.key === trimmed)?.primary || DEFAULT_CARD_COLOUR
+  return themes.find(theme => theme.key === trimmed)?.primary || PRESETS[trimmed] || DEFAULT_CARD_COLOUR
 }
 
 /** The current business's card colour. */
