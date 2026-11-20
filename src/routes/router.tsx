@@ -6,7 +6,7 @@ import { GuestOnly, RequireAuth, RequireBusiness, RequirePage } from './guards'
 import { pages } from './pages'
 import { paths } from './paths'
 
-const { AuthPage, SelectBusinessPage, OverviewPage, LoyaltyPage, ProgramDetailPage, CustomersPage, CustomerDetailPage, ScannerPage, MessagesPage, RewardsPage, CustomerWalletPage, SettingsPage, SegmentsPage, InsightsPage, ReferralsPage, ReferralProgrammePage, ImportCustomersPage, PlanPage, JoinPage, MemberCardPage } = pages
+const { AuthPage, SelectBusinessPage, OverviewPage, LoyaltyPage, ProgramDetailPage, CustomersHubPage, CustomerDetailPage, ScannerPage, MessagesPage, CustomerWalletPage, SettingsPage, ReferralsPage, ReferralProgrammePage, ImportCustomersPage, PlanPage, JoinPage, MemberCardPage } = pages
 
 const withLoader = (element: React.ReactNode) => <Suspense fallback={<AppLoader/>}>{element}</Suspense>
 
@@ -37,17 +37,19 @@ export const router = createBrowserRouter([
               { index: true, element: <OverviewPage/> },
               { path: paths.loyalty, element: <LoyaltyPage/> },
               { path: paths.programDetail, element: <ProgramDetailPage/> },
-              { path: paths.customers, element: <CustomersPage/> },
+              // Customers with a Segments tab (?tab=segments).
+              { path: paths.customers, element: <CustomersHubPage/> },
               { path: paths.customerDetail, element: <CustomerDetailPage/> },
               { path: paths.scanner, element: <ScannerPage/> },
               // Card studio is switched off: sink has none; the join card lives on each programme (QR) and takes the store colour.
               // { path: paths.cardStudio, element: <CardStudioPage/> },
               { path: paths.messages, element: <MessagesPage/> },
-              { path: paths.rewards, element: <RewardsPage/> },
+              // Rewards and Insights are tabs on Loyalty now; Segments is a tab on Customers. Old links still land there.
+              { path: paths.rewards, element: <Navigate to={`${paths.loyalty}?tab=rewards`} replace/> },
               { path: paths.wallet, element: <CustomerWalletPage/> },
               { path: paths.settings, element: <SettingsPage/> },
-              { path: paths.segments, element: <SegmentsPage/> },
-              { path: paths.insights, element: <InsightsPage/> },
+              { path: paths.segments, element: <Navigate to={`${paths.customers}?tab=segments`} replace/> },
+              { path: paths.insights, element: <Navigate to={`${paths.loyalty}?tab=insights`} replace/> },
               { path: paths.referrals, element: <ReferralsPage/> },
               { path: paths.referralProgramme, element: <ReferralProgrammePage/> },
               { path: paths.importCustomers, element: <ImportCustomersPage/> },

@@ -34,7 +34,7 @@ export default function ReferralsPage() {
   ] : []
 
   return <div className="min-w-0 space-y-5">
-    <PageHeading badge="REFERRALS" title="Referral Programmes" subtitle="Turn your loyal customers into your best marketers" actions={canManageLoyalty && <MkButton onClick={() => setCreating(true)}><Plus size={14}/>New Programme</MkButton>}/>
+    <PageHeading badge="AFFILIATE & REFERRAL" title="Affiliate & Referral" subtitle="Turn your loyal customers into your best marketers" actions={canManageLoyalty && <MkButton onClick={() => setCreating(true)}><Plus size={14}/>New Programme</MkButton>}/>
 
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {overview.isLoading || !o ? Array.from({ length: 5 }, (_, index) => <MetricSkeleton key={index} dark={index === 0}/>)

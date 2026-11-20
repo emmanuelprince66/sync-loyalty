@@ -8,6 +8,7 @@ const loaders = {
   loyalty: () => import('@/features/loyalty/LoyaltyPage'),
   programDetail: () => import('@/features/loyalty/ProgramDetailPage'),
   customers: () => import('@/features/customers/CustomersPage'),
+  customersHub: () => import('@/features/customers/CustomersHubPage'),
   customerDetail: () => import('@/features/customers/CustomerDetailPage'),
   scanner: () => import('@/features/scanner/ScannerPage'),
   cardStudio: () => import('@/features/card-studio/CardStudioPage'),
@@ -34,6 +35,7 @@ export const pages = {
   LoyaltyPage: lazy(loaders.loyalty),
   ProgramDetailPage: lazy(loaders.programDetail),
   CustomersPage: lazy(loaders.customers),
+  CustomersHubPage: lazy(loaders.customersHub),
   CustomerDetailPage: lazy(loaders.customerDetail),
   ScannerPage: lazy(loaders.scanner),
   // CardStudioPage: lazy(loaders.cardStudio), // Card studio is switched off: sink has none; the join card lives on each programme (QR) and takes the store colour.

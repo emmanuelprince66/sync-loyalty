@@ -36,6 +36,6 @@ export function useOverview() {
     create: openCreate,
     viewPrograms: () => navigate(paths.loyalty),
     openProgram: (id: string) => navigate(programPath(id)),
-    openRewards: () => navigate(paths.rewards),
+    openRewards: () => navigate(`${paths.loyalty}?tab=rewards`),
   }
 }

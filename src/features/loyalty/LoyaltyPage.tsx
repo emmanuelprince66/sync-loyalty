@@ -1,8 +1,12 @@
 import { Gift, Link2, Plus, QrCode, Ticket } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense } from 'react'
+import { useSearchParams } from 'react-router'
 import type { LoyaltyProgram } from '@/api/loyalty'
 import { useLoyaltyTheme } from '@/api/storeTheme'
-import { Card, Chips, EmptyBlock, ErrorBlock, MkButton, PageHeading, Tabs } from '@/components/ui/mk'
+import { Card, Chips, EmbeddedPage, EmptyBlock, ErrorBlock, MkButton, PageHeading, Tabs } from '@/components/ui/mk'
+import { usePermissions } from '@/hooks/usePermissions'
+import { pages } from '@/routes/pages'
+import { paths } from '@/routes/paths'
 import { CardGridSkeleton } from '@/components/ui/CardSkeleton'
 import { cn } from '@/lib/cn'
 import { asRate, formatRewardAmount } from '@/lib/reward-format'
@@ -12,6 +16,7 @@ import { ShareProgramModal } from './components/ShareProgramModal'
 import { PROGRAM_FILTERS, statusLabel, useLoyaltyPage } from './hooks/useLoyaltyPage'
 
 type Page = ReturnType<typeof useLoyaltyPage>
+type LoyaltyTab = 'programs' | 'members' | 'insights' | 'rewards'
 
 const linkClass = 'inline-flex items-center gap-1.5 text-xs font-extrabold text-black/65 transition hover:text-black disabled:cursor-not-allowed disabled:opacity-40'
 
@@ -73,11 +78,23 @@ function ProgramCard({ program, page }: { program: LoyaltyProgram; page: Page })
 
 export default function LoyaltyPage() {
   const page = useLoyaltyPage()
-  const [tab, setTab] = useState<'programs' | 'members'>('programs')
+  const { canOpen } = usePermissions()
+  const [params, setParams] = useSearchParams()
+  // Insights and Rewards live here as tabs (no longer in the sidebar); /insights and /rewards redirect to them.
+  const tabs: { value: LoyaltyTab; label: string }[] = [
+    { value: 'programs', label: 'Programs' },
+    { value: 'members', label: 'Members' },
+    ...(canOpen(paths.insights) ? [{ value: 'insights' as const, label: 'Insights' }] : []),
+    ...(canOpen(paths.rewards) ? [{ value: 'rewards' as const, label: 'Rewards' }] : []),
+  ]
+  const tab: LoyaltyTab = tabs.find(option => option.value === params.get('tab'))?.value ?? 'programs'
+  const setTab = (next: LoyaltyTab) => setParams(next === 'programs' ? {} : { tab: next }, { replace: true })
   return <div className="space-y-5">
     <PageHeading title="Loyalty programs" subtitle="Build habits, grow spend, and reward your best customers." actions={page.canCreate && <MkButton onClick={page.create}><Plus size={15}/>Create loyalty</MkButton>}/>
-    <Tabs options={[{ value: 'programs', label: 'Programs' }, { value: 'members', label: 'Members' }]} value={tab} onChange={setTab}/>
-    {tab === 'members' ? <MembersTab/> : <>
+    <Tabs options={tabs} value={tab} onChange={setTab}/>
+    {tab === 'insights' || tab === 'rewards'
+      ? <EmbeddedPage><Suspense fallback={<CardGridSkeleton count={4} gridClassName="grid gap-4 md:grid-cols-2 xl:grid-cols-4" footer={0}/>}>{tab === 'insights' ? <pages.InsightsPage/> : <pages.RewardsPage/>}</Suspense></EmbeddedPage>
+      : tab === 'members' ? <MembersTab/> : <>
     <Chips options={PROGRAM_FILTERS} value={page.filter} onChange={page.setFilter}/>
     {page.isError
       ? <Card><ErrorBlock text="We couldn’t load your loyalty programs." onRetry={page.retry}/></Card>

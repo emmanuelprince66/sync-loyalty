@@ -14,7 +14,7 @@ const SUPPORT_EMAIL = 'support@sync360.africa'
 /** Header title per route (the design shows the screen name under the business / city line). */
 export const titleFor = (pathname: string) => {
   if (pathname.startsWith(paths.wallet)) return 'Customer loyalty wallet'
-  const entries: [string, string][] = [[paths.loyalty, 'Loyalty'], [paths.customers, 'Customers'], [paths.scanner, 'Scanner'], [paths.cardStudio, 'Card studio'], [paths.messages, 'Messages'], [paths.rewards, 'Rewards'], [paths.settings, 'Settings'], [paths.kyc, 'Verification']]
+  const entries: [string, string][] = [[paths.loyalty, 'Loyalty'], [paths.customers, 'Customers'], [paths.scanner, 'Scanner'], [paths.cardStudio, 'Card studio'], [paths.messages, 'Messages'], [paths.referrals, 'Affiliate & Referral'], [paths.settings, 'Settings'], [paths.kyc, 'Verification']]
   return entries.find(([path]) => pathname.startsWith(path))?.[1] ?? 'Overview'
 }
 

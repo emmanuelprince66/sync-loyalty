@@ -42,7 +42,7 @@ export default function ReferralProgrammePage() {
   if (programme.isError && !programme.data) return <div className="min-w-0 space-y-5"><BackLink onClick={back}/><Card><ErrorBlock text="We couldn’t load this programme." onRetry={() => { void programme.refetch() }}/></Card></div>
 
   const p = programme.data
-  if (!p || !p.id) return <div className="min-w-0 space-y-5"><BackLink onClick={back}/><Card><EmptyBlock title="Programme not found" text="It may have been removed, or the link is out of date." action={<MkButton secondary onClick={back}>Back to Referrals</MkButton>}/></Card></div>
+  if (!p || !p.id) return <div className="min-w-0 space-y-5"><BackLink onClick={back}/><Card><EmptyBlock title="Programme not found" text="It may have been removed, or the link is out of date." action={<MkButton secondary onClick={back}>Back to Affiliate & Referral</MkButton>}/></Card></div>
 
   const { cap, pct, label } = capUsage(p)
   const list = participants.data ?? []

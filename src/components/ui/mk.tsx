@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ElementType, ReactNode } from 'react'
+import { createContext, useContext, type ButtonHTMLAttributes, type ElementType, type ReactNode } from 'react'
 import { MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -56,7 +56,22 @@ export function MetricSkeleton({ dark = false }: { dark?: boolean }) {
 }
 
 /** Page heading row: optional badge, big black title, muted line, actions on the right. */
+const EmbeddedContext = createContext(false)
+
+/** Wrap a page shown inside another page's tab: its PageHeading drops the big title (the outer page has one). */
+export function EmbeddedPage({ children }: { children: ReactNode }) {
+  return <EmbeddedContext.Provider value>{children}</EmbeddedContext.Provider>
+}
+
 export function PageHeading({ badge, title, subtitle, actions }: { badge?: string; title: string; subtitle?: string; actions?: ReactNode }) {
+  const embedded = useContext(EmbeddedContext)
+  if (embedded) {
+    if (!subtitle && !actions) return null
+    return <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+      {subtitle && <p className="min-w-0 text-xs text-black/50">{subtitle}</p>}
+      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+    </div>
+  }
   return <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
     <div className="min-w-0">
       {badge && <Badge>{badge}</Badge>}
