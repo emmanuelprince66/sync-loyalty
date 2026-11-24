@@ -30,6 +30,7 @@ export const paths = {
   kyc: '/kyc',
   /** Plan & billing (the account's Sync360 subscription). */
   plan: '/plan',
+  customDomain: '/custom-domain',
   /** Public (no sign-in): a programme's join page behind its QR, and a member's card by loyalty code. */
   join: '/loyalty/join/:token',
   card: '/loyalty/progress/:code',
@@ -41,3 +42,4 @@ export const customerPath =(id: string) => `${paths.customers}/${encodeURICompon
 export const cardPath = (code: string) => `/loyalty/progress/${encodeURIComponent(code)}`
 /** Same paths as sink. The token holds a colon ("<program_id>:<signature>"), which is legal in a path, so it goes in raw. */
 export const joinPath = (token: string) => `/loyalty/join/${token}`
+export const customDomainUpgradePath = () => `${paths.plan}?upgrade=custom-domain`

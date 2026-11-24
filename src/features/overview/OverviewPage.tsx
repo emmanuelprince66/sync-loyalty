@@ -1,13 +1,19 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import { ArrowRight, CircleDollarSign, Gift, Plus, TrendingUp, Users } from 'lucide-react'
 import { Badge, Card, EmptyBlock, ErrorBlock, Metric, MetricSkeleton, MkButton, PageHeading, initialsOf } from '@/components/ui/mk'
 import { useCardColour } from '@/api/storeTheme'
 import { useOverview } from './hooks/useOverview'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
 import { CardGridSkeleton } from '@/components/ui/CardSkeleton'
+import { CustomDomainPromptModal } from '@/features/storefront/components/CustomDomainPromptModal'
+import { paths } from '@/routes/paths'
 
 const icons = { users: Users, trend: TrendingUp, money: CircleDollarSign, gift: Gift }
 
 export default function OverviewPage() {
+  const navigate = useNavigate()
+  const [domainPromptOpen, setDomainPromptOpen] = useState(true)
   const page = useOverview()
   const colour = useCardColour()
   return <div className="space-y-5">
@@ -56,5 +62,6 @@ export default function OverviewPage() {
             <div className="mt-6 flex items-end justify-between"><div><p className="text-[9px] text-black/40">MEMBERS</p><b>{program.enrolled.toLocaleString()}</b></div><div className="text-right"><p className="text-[9px] text-black/40">COMPLETION</p><b>{program.completionRate ? `${program.completionRate.toFixed(0)}%` : '—'}</b></div></div>
           </button>)}</div>}
     </Card>
+    <CustomDomainPromptModal open={domainPromptOpen} onClose={() => setDomainPromptOpen(false)} onUpgrade={() => navigate(paths.customDomain)}/>
   </div>
 }

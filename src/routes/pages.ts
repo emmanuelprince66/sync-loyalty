@@ -24,6 +24,7 @@ const loaders = {
   // KYC is switched off in maheleKart for now (commented out, not deleted).
   // kyc: () => import('@/features/kyc/KycPage'),
   plan: () => import('@/features/plan/PlanPage'),
+  customDomain: () => import('@/features/storefront/CustomDomainPage'),
   join: () => import('@/features/public/JoinPage'),
   card: () => import('@/features/public/MemberCardPage'),
 }
@@ -50,6 +51,7 @@ export const pages = {
   ImportCustomersPage: lazy(loaders.importCustomers),
   // KycPage: lazy(loaders.kyc),
   PlanPage: lazy(loaders.plan),
+  CustomDomainPage: lazy(loaders.customDomain),
   JoinPage: lazy(loaders.join),
   MemberCardPage: lazy(loaders.card),
 }

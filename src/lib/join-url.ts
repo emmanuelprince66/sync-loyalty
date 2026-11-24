@@ -11,7 +11,11 @@ const isLocal = (origin: string) => /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]
 const publicOrigin = () => (isLocal(window.location.origin) && SITE ? SITE : window.location.origin)
 
 /** For the QR, the printed card and the copied link. */
-export const joinUrl = (token: string) => (token ? `${publicOrigin()}${joinPath(token)}` : '')
+export const joinUrl = (token: string, approvedDomain?: string) => {
+  if (!token) return ''
+  const domain = approvedDomain?.trim().replace(/^https?:\/\//i, '').replace(/\/.*$/, '').toLowerCase()
+  return `${domain ? `https://${domain}` : publicOrigin()}${joinPath(token)}`
+}
 
 /** For opening in this browser (Preview, Landing page): keeps the dev server previewable. */
 export const joinUrlHere = (token: string) => (token ? `${window.location.origin}${joinPath(token)}` : '')

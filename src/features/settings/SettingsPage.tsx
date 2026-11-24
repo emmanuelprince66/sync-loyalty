@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Crown, PenLine, Plus, Trash2 } from 'lucide-react'
+import { Crown, Globe2, PenLine, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
 import { useDeleteTier, useSaveTier, useTiers, type LoyaltyTier, type TierInput } from '@/api/loyalty'
@@ -13,7 +13,7 @@ import { MkModal } from '@/components/ui/MkModal'
 
 const emptyTier = (rank: number): TierInput => ({ name: '', rank, metric: 'SPEND', threshold: '', color: '#D7FF45' })
 
-/** Settings: membership tiers (loyalty/tiers, sink's tier editor) and links to KYC and Plan & billing. */
+/** Settings: membership tiers and links to custom-domain and billing controls. */
 function useSettings() {
   const navigate = useNavigate()
   const tiers = useTiers()
@@ -40,13 +40,14 @@ function useSettings() {
     remove: (id: string) => remove.mutate(id, { onSuccess: () => toast.success('Tier removed'), onError: error => toast.error(errorMessage(error, 'Could not remove the tier.')) }),
     goToKyc: () => navigate(paths.kyc),
     goToPlan: () => navigate(paths.plan),
+    goToCustomDomain: () => navigate(paths.customDomain),
   }
 }
 
 export default function SettingsPage() {
   const s = useSettings()
   return <div className="space-y-5">
-    <PageHeading title="Settings" subtitle="Your store colour, membership tiers and your plan."/>
+    <PageHeading title="Settings" subtitle="Your store colour, membership tiers, custom domain and plan."/>
     <Card className="p-5"><StoreColourPicker/></Card>
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-black/10 p-5"><div><h3 className="text-sm font-black">Membership tiers</h3><p className="mt-1 text-[10px] text-black/45">Members move up as their lifetime spend or visits grow</p></div><MkButton onClick={s.add}><Plus size={14}/>Add tier</MkButton></div>
@@ -68,6 +69,10 @@ export default function SettingsPage() {
         <div><span className={labelClass}>Badge colour</span><div className="mt-2 flex gap-2">{CARD_COLOURS.map(colour => <button key={colour} type="button" aria-label={`Colour ${colour}`} onClick={() => s.change({ color: colour })} className={cn('h-8 w-8 rounded-full border-2', s.editing?.input.color === colour ? 'border-black p-1' : 'border-transparent')}><i className="block h-full w-full rounded-full" style={{ background: colour }}/></button>)}</div></div>
       </div>}
     </MkModal>
+    <Card className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
+      <div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#D7FF45]"><Globe2 size={16}/></span><div className="min-w-0"><p className="text-sm font-black">Custom domain</p><p className="text-[10px] text-black/45">Give customers a branded link to join your loyalty program.</p></div></div>
+      <MkButton secondary onClick={s.goToCustomDomain}>Manage domain</MkButton>
+    </Card>
     {/* KYC is switched off in maheleKart for now (commented out, not deleted).
     <Card className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
       <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-[#D7FF45]"><ShieldCheck size={16}/></span><div><p className="text-sm font-black">Business verification</p><p className="text-[10px] text-black/45">Complete KYC to buy message credits from your wallet.</p></div></div>

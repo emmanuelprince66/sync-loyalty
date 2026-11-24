@@ -10,11 +10,12 @@ import { asRecord, listFrom, num, str, type UnknownRecord } from './http'
  *  GET  user/active_plan/?business_id=   the current plan and live usage; business_id only for a branch
  *                                        billed on its own (not the founding one)
  *  POST user/subscribe/                  { plan, duration: MONTHLY|QUARTERLY|BIANNUAL|ANNUAL, business_id? } → { payment_url }
- * Loyalty itself is not plan-gated: programmes, rewards, enrolments and QR codes are unlimited on every plan.
- * maheleKart only shows the shared fields (customer records, attendants, branches).
+ * Loyalty programmes, rewards, enrolments and QR codes are unlimited on every plan; custom domains use the
+ * shared custom_domain entitlement.
  */
 
-export type PlanField = 'customers_count' | 'no_of_attendants' | 'no_of_business'
+export type PlanField = 'customers_count' | 'no_of_attendants' | 'no_of_business' | 'custom_domain'
+export type CountField = Exclude<PlanField, 'custom_domain'>
 export type BillingPeriod = 'MONTHLY' | 'QUARTERLY' | 'BIANNUAL' | 'ANNUAL'
 
 export const BILLING_PERIODS: { value: BillingPeriod; label: string; priceKey: string; short: string }[] = [
@@ -29,12 +30,13 @@ export const SHARED_PLAN_FEATURES: { field: PlanField; label: string }[] = [
   { field: 'customers_count', label: 'Customer records' },
   { field: 'no_of_attendants', label: 'Attendants' },
   { field: 'no_of_business', label: 'Branches' },
+  { field: 'custom_domain', label: 'Custom domain' },
 ]
 
 /** What every plan includes for loyalty (not gated by the backend). */
 export const LOYALTY_FEATURES = ['Loyalty programmes', 'Rewards', 'Member enrolments', 'QR codes'] as const
 
-export type PlanLimits = Partial<Record<PlanField, number>>
+export type PlanLimits = Partial<Record<PlanField, number | boolean>>
 export type Plan = { raw?: UnknownRecord; id: string; name: string; prices: Record<string, number>; limits: PlanLimits }
 export type ActivePlan = {
   name: string
@@ -45,14 +47,14 @@ export type ActivePlan = {
   duration: string
   limits: PlanLimits
   /** Live usage, where the backend reports it. */
-  usage: PlanLimits
+  usage: Partial<Record<CountField, number>>
 }
 
 const limitsOf = (record: UnknownRecord): PlanLimits => {
   const limits: PlanLimits = {}
   for (const { field } of SHARED_PLAN_FEATURES) {
     const value = record[field]
-    if (value !== undefined && value !== null && value !== '') limits[field] = num(value)
+    if (value !== undefined && value !== null && value !== '') limits[field] = typeof value === 'boolean' ? value : num(value)
   }
   return limits
 }
@@ -63,7 +65,7 @@ const mapPlan = (value: unknown): Plan => {
 }
 
 /** Usage keys the active plan may carry for each field (the backend names them per counter; undocumented). */
-const USAGE_KEYS: Record<PlanField, string[]> = {
+const USAGE_KEYS: Record<CountField, string[]> = {
   customers_count: ['customer_count'],
   // sink's Premium screen lists `attendants` under Features next to customer_count / business_count: a count.
   no_of_attendants: ['attendants', 'attendants_count', 'attendant_count'],
@@ -123,8 +125,8 @@ export const summaryOf = (root: UnknownRecord): PlanSummary => ({
 const mapActivePlan = (value: unknown): ActivePlan => {
   const root = asRecord(asRecord(value).data ?? value)
   const usage = asRecord(root.usage)
-  const used: PlanLimits = {}
-  for (const [field, keys] of Object.entries(USAGE_KEYS) as [PlanField, string[]][]) {
+  const used: ActivePlan['usage'] = {}
+  for (const [field, keys] of Object.entries(USAGE_KEYS) as [CountField, string[]][]) {
     const key = keys.find(k => usage[k] !== undefined || root[k] !== undefined)
     if (key) used[field] = num(usage[key] ?? root[key])
   }
@@ -135,7 +137,12 @@ const mapActivePlan = (value: unknown): ActivePlan => {
     amount: num(root.amount),
     duration: str(root.duration).toUpperCase(),
     // customer_limit is the one shared limit active_plan sends (-1 = unlimited).
-    limits: { ...limitsOf(asRecord(root.plan)), ...(root.customer_limit !== undefined && root.customer_limit !== null ? { customers_count: num(root.customer_limit) } : {}) },
+    limits: {
+      ...limitsOf(asRecord(root.plan)),
+      ...limitsOf(asRecord(root.limits)),
+      ...(root.customer_limit !== undefined && root.customer_limit !== null ? { customers_count: num(root.customer_limit) } : {}),
+      ...(typeof root.custom_domain_allowed === 'boolean' ? { custom_domain: root.custom_domain_allowed } : {}),
+    },
     usage: used,
   }
 }
@@ -192,8 +199,23 @@ export const useActivePlan = () => {
   const tier = raw ? matchPlan(raw, plans.data ?? []) : undefined
   const s = raw?.summary
   // Limits active_plan sends itself win over the matched tier's.
-  const data: ActivePlan | undefined = raw && s && { ...raw, name: s.planName || tier?.name || raw.name, limits: { ...(tier?.limits ?? {}), ...raw.limits, ...(s.attendantsLimit !== null ? { no_of_attendants: s.attendantsLimit } : {}), ...(s.businessLimit !== null ? { no_of_business: s.businessLimit } : {}) } }
+  const data: ActivePlan | undefined = raw && s && { ...raw, name: s.planName || tier?.name || raw.name, limits: { ...(tier?.limits ?? {}), ...raw.limits, ...(s.attendantsLimit !== null ? { no_of_attendants: s.attendantsLimit } : {}), ...(s.businessLimit !== null ? { no_of_business: s.businessLimit } : {}), ...(s.customDomainAllowed !== null ? { custom_domain: s.customDomainAllowed } : {}) } }
   return { data, isLoading: query.isLoading, isError: query.isError, error: query.error, refetch: query.refetch }
+}
+
+/** Custom domains are available only when the active tier explicitly includes them. */
+export const useCustomDomainGate = () => {
+  const plan = useActivePlan()
+  const branch = useBranchSubscription()
+  const data = plan.data
+  return {
+    allowed: !branch.locked && (data ? (data.summary.customDomainAllowed ?? data.limits.custom_domain !== false) : false),
+    branchLocked: branch.locked,
+    isLoading: plan.isLoading,
+    isError: plan.isError,
+    error: plan.error,
+    refetch: plan.refetch,
+  }
 }
 
 export const useSubscribe = () => useMutation({

@@ -6,7 +6,7 @@ import { GuestOnly, RequireAuth, RequireBusiness, RequirePage } from './guards'
 import { pages } from './pages'
 import { paths } from './paths'
 
-const { AuthPage, SelectBusinessPage, OverviewPage, LoyaltyPage, ProgramDetailPage, CustomersHubPage, CustomerDetailPage, ScannerPage, MessagesPage, CustomerWalletPage, SettingsPage, ReferralsPage, ReferralProgrammePage, ImportCustomersPage, PlanPage, JoinPage, MemberCardPage } = pages
+const { AuthPage, SelectBusinessPage, OverviewPage, LoyaltyPage, ProgramDetailPage, CustomersHubPage, CustomerDetailPage, ScannerPage, MessagesPage, CustomerWalletPage, SettingsPage, ReferralsPage, ReferralProgrammePage, ImportCustomersPage, PlanPage, CustomDomainPage, JoinPage, MemberCardPage } = pages
 
 const withLoader = (element: React.ReactNode) => <Suspense fallback={<AppLoader/>}>{element}</Suspense>
 
@@ -56,6 +56,7 @@ export const router = createBrowserRouter([
               // KYC is switched off in maheleKart for now (commented out, not deleted).
               // { path: paths.kyc, element: <KycPage/> },
               { path: paths.plan, element: <PlanPage/> },
+              { path: paths.customDomain, element: <CustomDomainPage/> },
             ],
           }],
         }],

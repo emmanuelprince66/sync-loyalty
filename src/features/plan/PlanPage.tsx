@@ -1,5 +1,6 @@
-import { useRef, useState, type ReactNode } from 'react'
-import { Check, Crown, Infinity as InfinityIcon, Lock } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
+import { Check, Crown, Infinity as InfinityIcon, Lock, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/auth'
 import { BILLING_PERIODS, SHARED_PLAN_FEATURES, matchPlan, useActivePlan, useBranchSubscription, usePlans, useSubscribe, type BillingPeriod, type Plan } from '@/api/plan'
@@ -10,8 +11,15 @@ import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { cn } from '@/lib/cn'
 
 /** As sink: only a real -1 is unlimited (∞); a missing value is "—"; any other number is shown as-is. */
-const limitText = (value: number | null | undefined) => (value === undefined || value === null ? '—' : value === -1 ? '∞' : value.toLocaleString())
+const limitText = (value: number | boolean | null | undefined) => (value === undefined || value === null ? '—' : typeof value === 'boolean' ? (value ? 'Included' : 'Not included') : value === -1 ? '∞' : value.toLocaleString())
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
+const includesCustomDomain = (plan: Plan) => plan.limits.custom_domain === true || (typeof plan.limits.custom_domain === 'number' && plan.limits.custom_domain > 0)
+const syncPlusIndex = (plans: Plan[]) => plans.findIndex(plan => /sync[\s-]*plus/i.test(plan.name))
+const featureText = (plan: Plan, field: keyof Plan['limits'], label: string) => {
+  const value = plan.limits[field]
+  if (field === 'custom_domain') return includesCustomDomain(plan) ? 'Custom domain included' : 'No custom domain'
+  return `${limitText(value)} ${label.toLowerCase()}`
+}
 const naira = (amount: number) => `₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const DURATION_LABEL: Record<string, string> = { ANNUAL: 'annual', MONTHLY: 'monthly', QUARTERLY: 'quarterly', BIANNUAL: '6 months' }
 const durationLabel = (duration: string) => DURATION_LABEL[duration.toUpperCase()] ?? duration.toLowerCase()
@@ -22,14 +30,21 @@ function usePlanPage() {
   const plans = usePlans()
   const active = useActivePlan()
   const branch = useBranchSubscription()
+  const [searchParams] = useSearchParams()
+  const customDomainUpgrade = searchParams.get('upgrade') === 'custom-domain'
   const subscribe = useSubscribe()
   const [period, setPeriod] = useState<BillingPeriod>('MONTHLY')
   const [pending, setPending] = useState<Plan | null>(null)
   const billing = BILLING_PERIODS.find(item => item.value === period) ?? BILLING_PERIODS[0]
+  const allPlans = plans.data ?? []
+  const plusIndex = syncPlusIndex(allPlans)
+  const visiblePlans = customDomainUpgrade
+    ? plusIndex >= 0 ? allPlans.slice(plusIndex) : allPlans.filter(includesCustomDomain)
+    : allPlans
   // The tier name only when active_plan's limits match exactly one plan (active_plan carries no name).
   const tierName = active.data ? matchPlan(active.data, plans.data ?? [])?.name ?? '' : ''
   return {
-    money, plans, active, branch, period, setPeriod, billing, pending, tierName,
+    money, plans, active, branch, period, setPeriod, billing, pending, tierName, customDomainUpgrade, visiblePlans,
     current: active.data,
     subscribing: subscribe.isPending,
     choose: (plan: Plan) => setPending(plan),
@@ -65,6 +80,10 @@ export default function PlanPage() {
   const summary = current?.summary
   const pendingPrice = s.pending?.prices[s.billing.priceKey] ?? 0
   const plansRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (s.customDomainUpgrade) plansRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [s.customDomainUpgrade])
 
   return <div className="space-y-5">
     <PageHeading title="Plan & billing" subtitle="One subscription covers all your Sync360 apps."/>
@@ -118,13 +137,13 @@ export default function PlanPage() {
     <div ref={plansRef} className="scroll-mt-4">
       <Card className="p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0"><h3 className="text-sm font-black">Plans</h3><p className="mt-1 text-[10px] text-black/45">Upgrade for more customer records, attendants and branches.</p></div>
+          <div className="min-w-0"><h3 className="text-sm font-black">{s.customDomainUpgrade ? 'Plans with custom domains' : 'Plans'}</h3><p className="mt-1 text-[10px] text-black/45">{s.customDomainUpgrade ? 'Choose Sync Plus or a higher plan to use your own domain for loyalty sign-up links.' : 'Upgrade for more customer records, attendants, branches and custom domains.'}</p></div>
           <Chips options={BILLING_PERIODS} value={s.period} onChange={s.setPeriod}/>
         </div>
         {s.plans.isError ? <ErrorBlock text={errorMessage(s.plans.error, 'We couldn’t load the plans.')} onRetry={() => void s.plans.refetch()}/>
           : s.plans.isLoading ? <CardGridSkeleton count={3} footer={0} gridClassName="mt-5 grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 xl:grid-cols-3"/>
-            : (s.plans.data ?? []).length === 0 ? <p className="mt-5 text-xs text-black/45">No plans are available right now.</p>
-              : <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 xl:grid-cols-3">{(s.plans.data ?? []).map(plan => {
+            : s.visiblePlans.length === 0 ? <p className="mt-5 text-xs text-black/45">{s.customDomainUpgrade ? 'No plans with custom domains are currently available.' : 'No plans are available right now.'}</p>
+                : <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 xl:grid-cols-3">{s.visiblePlans.map(plan => {
                 const isCurrent = Boolean(tierName) && sameName(plan.name, tierName)
                 const price = plan.prices[s.billing.priceKey] ?? 0
                 const disabled = (isCurrent && !branch.locked) || price <= 0
@@ -132,7 +151,7 @@ export default function PlanPage() {
                   <div className="flex items-center justify-between gap-2"><b className="truncate text-sm font-black">{plan.name}</b>{isCurrent && <Badge>Current</Badge>}</div>
                   <p className="mt-3 break-words text-2xl font-black tracking-[-.04em]">{price > 0 ? s.money(price) : 'Free'}{price > 0 && <span className="text-xs font-bold tracking-normal text-black/45"> / {s.billing.short}</span>}</p>
                   <ul className="mt-4 flex flex-1 flex-col gap-2">
-                    {SHARED_PLAN_FEATURES.map(({ field, label }) => <li key={field} className="flex items-center gap-2 text-xs font-semibold text-black/70"><Check size={14} className="shrink-0"/><span className="min-w-0">{limitText(plan.limits[field])} {label.toLowerCase()}</span></li>)}
+                    {SHARED_PLAN_FEATURES.map(({ field, label }) => <li key={field} className="flex items-center gap-2 text-xs font-semibold text-black/70">{field === 'custom_domain' && !includesCustomDomain(plan) ? <X size={14} className="shrink-0 text-black/30"/> : <Check size={14} className="shrink-0"/>}<span className="min-w-0">{featureText(plan, field, label)}</span></li>)}
                     <li className="flex items-center gap-2 text-xs font-semibold text-black/70"><Check size={14} className="shrink-0"/><span className="min-w-0">Unlimited loyalty</span></li>
                   </ul>
                   <MkButton onClick={() => s.choose(plan)} disabled={disabled} className="mt-5 w-full">{isCurrent && !branch.locked ? 'Your plan' : price <= 0 ? 'Free plan' : `Choose ${plan.name}`}</MkButton>

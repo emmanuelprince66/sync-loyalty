@@ -5,6 +5,8 @@ import { MkModal } from '@/components/ui/MkModal'
 import { joinUrl as publicJoinUrl, joinUrlHere } from '@/lib/join-url'
 import { useBusinessDataStore } from '@/stores/business-data-store'
 import { JoinQrCard } from './JoinQrCard'
+import { useCurrentBusiness } from '@/api/business'
+import { str } from '@/api/http'
 
 /**
  * sink's ProgrammeCreated: right after creating, the card customers scan to join, ready to download,
@@ -13,9 +15,11 @@ import { JoinQrCard } from './JoinQrCard'
  */
 export function ProgramCreatedModal({ program, onClose, onView }: { program: LoyaltyProgram | null; onClose: () => void; onView: () => void }) {
   const detail = useProgram(program?.id || undefined)
+  const business = useCurrentBusiness()
   const businessName = useBusinessDataStore(state => state.businessData?.name) || 'Your business'
   const token = detail.data?.token ?? ''
-  const joinUrl = publicJoinUrl(token)
+  const approvedDomain = business.data?.raw.custom_domain_approved === true ? str(business.data.raw.custom_domain) : undefined
+  const joinUrl = publicJoinUrl(token, approvedDomain)
   const p = detail.data?.program ?? program
 
   return <MkModal open={Boolean(program)} onClose={onClose} kicker="🎉 Program created" title={`${program?.name ?? 'Your program'} is live`} description="Here’s the card your customers scan to join. Download it, print it, or check the sign-up page." size="md"

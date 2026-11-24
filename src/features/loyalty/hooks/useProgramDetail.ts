@@ -10,6 +10,8 @@ import { useFormatMoney } from '@/hooks/useFormatMoney'
 import { usePermissions } from '@/hooks/usePermissions'
 import { paths } from '@/routes/paths'
 import { useBusinessDataStore } from '@/stores/business-data-store'
+import { useCurrentBusiness } from '@/api/business'
+import { str } from '@/api/http'
 
 export type DetailTab = 'overview' | 'participants' | 'qr' | 'report'
 export type ParticipantFilter = 'All' | 'Active' | 'Completed' | 'At risk'
@@ -26,6 +28,7 @@ export function useProgramDetail() {
   const money = useFormatMoney()
   const { canManageLoyalty } = usePermissions()
   const detail = useProgram(programId)
+  const business = useCurrentBusiness()
   const members = useEnrollments(programId)
   const qr = useProgramQr(programId)
   const update = useUpdateProgram()
@@ -40,7 +43,8 @@ export function useProgramDetail() {
 
   const d = detail.data
   const token = d?.token || qr.data?.token || ''
-  const joinUrl = publicJoinUrl(token)
+  const approvedDomain = business.data?.raw.custom_domain_approved === true ? str(business.data.raw.custom_domain) : undefined
+  const joinUrl = publicJoinUrl(token, approvedDomain)
   const status = d?.program.status
   const participants = d?.participants ?? []
   const filtered = participants.filter(row => {
