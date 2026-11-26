@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { InstallAppCard } from '@/components/pwa/InstallPrompt'
 import { useParams, useSearchParams } from 'react-router'
 import { Check, Download, Gift, History, Link2, Printer, Share2, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
@@ -70,6 +71,8 @@ export default function MemberCardPage() {
 
           <div ref={cardRef}><LoyaltyCard wallet={w} businessName={businessName} colour={colour}/></div>
 
+          <InstallAppCard/>
+
           <section aria-label="Keep your card" className="space-y-3 border border-black/10 bg-white p-4">
             <div><p className="text-sm font-black">Keep your card handy</p><p className="mt-1 text-[11px] leading-relaxed text-black/50">Save it to your phone or keep the link. Show the QR code at the counter every time you visit.</p></div>
             <MkButton onClick={() => { void download() }} loading={busy === 'download'} disabled={busy !== null} className="w-full"><Download size={14}/>Download my card</MkButton>
@@ -77,7 +80,6 @@ export default function MemberCardPage() {
               <MkButton secondary onClick={() => { void share() }} className="w-full">{canShare ? <><Share2 size={14}/>Share link</> : copied ? <><Check size={14}/>Link copied</> : <><Link2 size={14}/>Copy link</>}</MkButton>
               <MkButton secondary onClick={() => { void print() }} loading={busy === 'print'} disabled={busy !== null} className="w-full"><Printer size={14}/>Print</MkButton>
             </div>
-            <p className="text-[10px] leading-relaxed text-black/40">Tip: bookmark this page or add it to your home screen to open your card any time.</p>
           </section>
 
           <div className="grid grid-cols-3 gap-3 text-center">

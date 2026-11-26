@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { InstallAppCard } from '@/components/pwa/InstallPrompt'
 import { useNavigate, useParams } from 'react-router'
 import { errorMessage } from '@/api/auth'
 import { useJoinProgram, usePublicProgram, type JoinInput } from '@/api/loyalty'
@@ -60,6 +61,7 @@ export default function JoinPage() {
               {error && <p role="alert" className="bg-[#FFE6DD] px-3 py-2 text-xs font-bold text-[#B43A16]">{error}</p>}
               <MkButton type="submit" loading={join.isPending} className="w-full">Join {p.name}</MkButton>
             </form>
+            <InstallAppCard className="mt-5"/>
           </>}
     </div>
   </div>
