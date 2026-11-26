@@ -1,6 +1,7 @@
-import { Check, Download, Share, SquarePlus, X } from 'lucide-react'
+import { Check, Download, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
+import { ManualIntro, ManualSteps } from './ManualSteps'
 import { closeInstallSheet, openInstallSheet, useInstallPrompt } from './useInstallPrompt'
 
 const DISMISS_KEY = 'synccard.installPrompt.dismissedAt'
@@ -24,21 +25,6 @@ function rememberDismiss() {
 
 const BENEFITS = ['Your card and points one tap away', 'Opens full screen, like any app', 'Free, no app store needed']
 
-/** The iPhone steps, numbered, with the icons people actually see in Safari. */
-function IosSteps() {
-  const steps = [
-    <>Tap <Share aria-hidden="true" className="mx-0.5 inline h-[18px] w-[18px] -translate-y-px align-middle text-[#1367D8]"/> <b>Share</b> in Safari’s toolbar</>,
-    <>Choose <SquarePlus aria-hidden="true" className="mx-0.5 inline h-[18px] w-[18px] -translate-y-px align-middle"/> <b>Add to Home Screen</b></>,
-    <>Tap <b>Add</b>. Sync Card is now on your home screen.</>,
-  ]
-  return <ol className="mt-4 space-y-2.5">
-    {steps.map((step, index) => <li key={index} className="flex items-center gap-3 rounded-2xl bg-[#F6F6F2] px-3 py-2.5 text-[13px] leading-snug text-black">
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-black text-[11px] font-black text-[#D7FF45]">{index + 1}</span>
-      <span className="min-w-0">{step}</span>
-    </li>)}
-  </ol>
-}
-
 /**
  * "Get the Sync Card app": a bottom sheet over a dimmed page, shown shortly after any page opens (customers'
  * card and join pages included) and whenever an Install app button is tapped. Chrome/Edge (Android, desktop) get
@@ -46,7 +32,7 @@ function IosSteps() {
  * "Not now" keeps it away for 3 days. Mounted once in main.tsx.
  */
 export function InstallPrompt() {
-  const { mode, requested, install } = useInstallPrompt()
+  const { mode, manual, requested, install } = useInstallPrompt()
   const [ready, setReady] = useState(false)
   const [dismissed, setDismissed] = useState(dismissedRecently)
   const primary = useRef<HTMLButtonElement>(null)
@@ -117,8 +103,8 @@ export function InstallPrompt() {
           </button>
         </>
         : <>
-          <p className="mt-3 text-[13px] leading-snug text-black/60">Add Sync Card to your home screen in three taps. It opens full screen, like any app.</p>
-          <IosSteps/>
+          {manual && <ManualIntro kind={manual} appName="Sync Card"/>}
+          {manual && <ManualSteps kind={manual} appName="Sync Card" dark="#000000" bg="#F6F6F2" numberColour="#D7FF45"/>}
           <button ref={primary} type="button" onClick={notNow} className="mt-5 flex h-[52px] w-full items-center justify-center rounded-full bg-black text-[15px] font-black text-white transition hover:bg-[#272727] active:scale-[.98]">Got it</button>
         </>}
       <button type="button" onClick={notNow} className="mt-2 h-10 w-full rounded-full text-[13px] font-extrabold text-black/55 hover:text-black">Not now</button>
