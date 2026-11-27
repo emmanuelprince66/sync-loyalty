@@ -1,3 +1,4 @@
+import { useApiDateRange } from '@/hooks/useApiDateRange'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
@@ -36,7 +37,9 @@ export function useLoyaltyPage() {
   const [filter, setFilter] = useState<ProgramFilter>('ALL')
   const [sharing, setSharing] = useState<LoyaltyProgram | null>(null)
   const [landingFor, setLandingFor] = useState('')
-  const programs = usePrograms()
+  // Programmes for a chosen period (loyalty/programs start_date / end_date).
+  const dates = useApiDateRange()
+  const programs = usePrograms(dates.query)
   const rows = (programs.data ?? []).filter(program => filter === 'ALL' || program.status === filter)
 
   /**
@@ -59,6 +62,7 @@ export function useLoyaltyPage() {
   }
 
   return {
+    dates,
     filter,
     setFilter,
     programs: rows,

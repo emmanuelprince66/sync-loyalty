@@ -1,3 +1,4 @@
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { ArrowLeft, Pause, PenLine, Play, Trash2 } from 'lucide-react'
 import { useLoyaltyTheme } from '@/api/storeTheme'
 import { formatActivityDate } from '@/api/http'
@@ -29,7 +30,7 @@ function BackLink({ onClick }: { onClick: () => void }) {
 function Overview({ page }: { page: ProgramDetailModel }) {
   return <div className="space-y-5">
     <Card className="overflow-hidden">
-      <div className="border-b border-black/10 p-5"><h3 className="text-sm font-black">Members</h3><p className="mt-1 text-[11px] text-black/45">Everyone enrolled and how close they are to the reward</p></div>
+      <div className="flex flex-col gap-3 border-b border-black/10 p-5 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="text-sm font-black">Members</h3><p className="mt-1 text-[11px] text-black/45">Everyone enrolled and how close they are to the reward</p></div><DateRangeFilter value={page.memberDates.range} onChange={page.memberDates.setRange} placeholder="Joined any time" className="w-full sm:w-56"/></div>
       {page.membersLoading
         ? <TableSkeleton rows={4} columns={[{ flex: true, twoLine: true }, { pill: true }, { width: 'w-24', twoLine: true }, { width: 'w-12', hiddenOnMobile: true }, { pill: true }]}/>
         : page.members.length === 0

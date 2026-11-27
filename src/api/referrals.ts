@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { withDates, type ApiDateRange } from './http'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiRequest } from '@/lib/api-client'
 import { requireBusinessId, useCurrentBusinessId } from './business'
 import { asRecord, listFrom, num, str } from './http'
@@ -36,11 +37,12 @@ const mapProgramme = (value: unknown): ReferralProgramme => {
   }
 }
 
-export const useReferralProgrammes = () => {
+export const useReferralProgrammes = (range: ApiDateRange = {}) => {
   const { businessId, enabled } = useBusiness()
   return useQuery({
-    queryKey: [...referralKeys.all, 'programmes', businessId],
-    queryFn: async () => listFrom(await apiRequest<unknown>(withBusiness('referral/customer-programmes/', businessId)), ['results.data', 'data.results.data', 'results', 'data']).map(mapProgramme),
+    queryKey: [...referralKeys.all, 'programmes', businessId, range.startDate ?? '', range.endDate ?? ''],
+    placeholderData: keepPreviousData,
+    queryFn: async () => listFrom(await apiRequest<unknown>(withDates(withBusiness('referral/customer-programmes/', businessId), range)), ['results.data', 'data.results.data', 'results', 'data']).map(mapProgramme),
     enabled,
   })
 }
@@ -64,11 +66,12 @@ export const useReferralOverview = () => {
   })
 }
 
-export const useReferralParticipants = (programmeId: string | undefined, search: string) => useQuery({
-  queryKey: [...referralKeys.all, 'participants', programmeId, search],
+export const useReferralParticipants = (programmeId: string | undefined, search: string, range: ApiDateRange = {}) => useQuery({
+  queryKey: [...referralKeys.all, 'participants', programmeId, search, range.startDate ?? '', range.endDate ?? ''],
+  placeholderData: keepPreviousData,
   queryFn: async () => {
     const query = search.trim() ? `?search=${encodeURIComponent(search.trim())}` : ''
-    return listFrom(await apiRequest<unknown>(`referral/customer-programmes/${programmeId}/participants/${query}`), ['results.data', 'data.results.data', 'results', 'data']).map((value): ReferralParticipant => {
+    return listFrom(await apiRequest<unknown>(withDates(`referral/customer-programmes/${programmeId}/participants/${query}`, range)), ['results.data', 'data.results.data', 'results', 'data']).map((value): ReferralParticipant => {
       const p = asRecord(value)
       return { id: str(p.id), code: str(p.code), name: str(p.customer_name), initials: str(p.initials), phone: str(p.phone), link: str(p.referral_link), referrals: num(p.referrals_count), paid: num(p.paid_count), earned: num(p.total_earned), createdAt: str(p.created_at) }
     })

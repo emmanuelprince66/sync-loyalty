@@ -1,3 +1,5 @@
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
+import { useApiDateRange } from '@/hooks/useApiDateRange'
 import { useState } from 'react'
 import { Gift, Link2, Plus, TrendingUp, Users } from 'lucide-react'
 import { useReferralOverview, useReferralProgrammes } from '@/api/referrals'
@@ -20,7 +22,9 @@ export default function ReferralsPage() {
   const money = useFormatMoney()
   const { canManageLoyalty } = usePermissions()
   const overview = useReferralOverview()
-  const programmes = useReferralProgrammes()
+  // Programmes for a chosen period (start_date / end_date).
+  const dates = useApiDateRange()
+  const programmes = useReferralProgrammes(dates.query)
   const [creating, setCreating] = useState(false)
   const o = overview.data
   const list = programmes.data ?? []
@@ -34,7 +38,10 @@ export default function ReferralsPage() {
   ] : []
 
   return <div className="min-w-0 space-y-5">
-    <PageHeading badge="AFFILIATE & REFERRAL" title="Affiliate & Referral" subtitle="Turn your loyal customers into your best marketers" actions={canManageLoyalty && <MkButton onClick={() => setCreating(true)}><Plus size={14}/>New Programme</MkButton>}/>
+    <PageHeading badge="AFFILIATE & REFERRAL" title="Affiliate & Referral" subtitle="Turn your loyal customers into your best marketers" actions={<>
+      <DateRangeFilter value={dates.range} onChange={dates.setRange} placeholder="All time" className="w-full sm:w-56"/>
+      {canManageLoyalty && <MkButton onClick={() => setCreating(true)}><Plus size={14}/>New Programme</MkButton>}
+    </>}/>
 
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {overview.isLoading || !o ? Array.from({ length: 5 }, (_, index) => <MetricSkeleton key={index} dark={index === 0}/>)

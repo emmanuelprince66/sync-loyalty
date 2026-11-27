@@ -88,3 +88,15 @@ export const formatShortDate = (iso: string) => {
   const date = new Date(iso)
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+
+/** An inclusive from/to range (YYYY-MM-DD; '' or undefined = open), as start_date / end_date. */
+export type ApiDateRange = { startDate?: string; endDate?: string }
+
+/** `start_date` / `end_date` for a path that may already carry a query: '' when the range is open. */
+export const withDates = (path: string, range: ApiDateRange = {}) => {
+  const params = new URLSearchParams()
+  if (range.startDate) params.set('start_date', range.startDate)
+  if (range.endDate) params.set('end_date', range.endDate)
+  const query = params.toString()
+  return query ? `${path}${path.includes('?') ? '&' : '?'}${query}` : path
+}

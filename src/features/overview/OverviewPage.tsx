@@ -1,3 +1,4 @@
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ArrowRight, CircleDollarSign, Gift, Plus, TrendingUp, Users } from 'lucide-react'
@@ -17,7 +18,10 @@ export default function OverviewPage() {
   const page = useOverview()
   const colour = useCardColour()
   return <div className="space-y-5">
-    <PageHeading badge="LIVE PERFORMANCE" title="Loyalty that moves people." subtitle="See what keeps your customers coming back—and spending more." actions={page.canCreate && <MkButton onClick={page.create}><Plus size={15}/>Create loyalty</MkButton>}/>
+    <PageHeading badge="LIVE PERFORMANCE" title="Loyalty that moves people." subtitle="See what keeps your customers coming back—and spending more." actions={<>
+      <DateRangeFilter value={page.dates.range} onChange={page.dates.setRange} placeholder="All time" className="w-full sm:w-56"/>
+      {page.canCreate && <MkButton onClick={page.create}><Plus size={15}/>Create loyalty</MkButton>}
+    </>}/>
 
     {page.isError
       ? <Card><ErrorBlock text="We couldn’t load your loyalty numbers." onRetry={page.retry}/></Card>

@@ -1,3 +1,4 @@
+import { useApiDateRange } from '@/hooks/useApiDateRange'
 import { useNavigate } from 'react-router'
 import { useLoyaltyDashboard, usePrograms } from '@/api/loyalty'
 import { useFormatMoney } from '@/hooks/useFormatMoney'
@@ -13,12 +14,15 @@ export function useOverview() {
   const money = useFormatMoney()
   const { canManageLoyalty } = usePermissions()
   const openCreate = useUiStore(state => state.openCreateLoyalty)
-  const dashboard = useLoyaltyDashboard()
+  // The overview numbers for a chosen period (loyalty/dashboard start_date / end_date).
+  const dates = useApiDateRange()
+  const dashboard = useLoyaltyDashboard(dates.query)
   const programs = usePrograms()
   const d = dashboard.data
   const live = (programs.data ?? []).filter(program => program.status === 'ACTIVE')
 
   return {
+    dates,
     isLoading: dashboard.isLoading,
     isError: dashboard.isError,
     retry: () => { void dashboard.refetch() },

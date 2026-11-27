@@ -1,3 +1,4 @@
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { Gift, Link2, Plus, QrCode, Ticket } from 'lucide-react'
 import { Suspense } from 'react'
 import { useSearchParams } from 'react-router'
@@ -90,7 +91,10 @@ export default function LoyaltyPage() {
   const tab: LoyaltyTab = tabs.find(option => option.value === params.get('tab'))?.value ?? 'programs'
   const setTab = (next: LoyaltyTab) => setParams(next === 'programs' ? {} : { tab: next }, { replace: true })
   return <div className="space-y-5">
-    <PageHeading title="Loyalty programs" subtitle="Build habits, grow spend, and reward your best customers." actions={page.canCreate && <MkButton onClick={page.create}><Plus size={15}/>Create loyalty</MkButton>}/>
+    <PageHeading title="Loyalty programs" subtitle="Build habits, grow spend, and reward your best customers." actions={<>
+      {tab === 'programs' && <DateRangeFilter value={page.dates.range} onChange={page.dates.setRange} placeholder="All time" className="w-full sm:w-56"/>}
+      {page.canCreate && <MkButton onClick={page.create}><Plus size={15}/>Create loyalty</MkButton>}
+    </>}/>
     <Tabs options={tabs} value={tab} onChange={setTab}/>
     {tab === 'insights' || tab === 'rewards'
       ? <EmbeddedPage><Suspense fallback={<CardGridSkeleton count={4} gridClassName="grid gap-4 md:grid-cols-2 xl:grid-cols-4" footer={0}/>}>{tab === 'insights' ? <pages.InsightsPage/> : <pages.RewardsPage/>}</Suspense></EmbeddedPage>

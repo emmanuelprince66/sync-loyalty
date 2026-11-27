@@ -1,3 +1,5 @@
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
+import { useApiDateRange } from '@/hooks/useApiDateRange'
 import { useState } from 'react'
 import { Gift, Percent, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
@@ -25,12 +27,15 @@ function useRewardsPage() {
   const money = useFormatMoney()
   const { canScan } = usePermissions()
   const [status, setStatus] = useState<RewardStatus | ''>('')
-  const rewards = useRewards(status)
-  const summary = useRewardsSummary()
+  // Rewards and their summary for a chosen period (start_date / end_date).
+  const dates = useApiDateRange()
+  const rewards = useRewards(status, dates.query)
+  const summary = useRewardsSummary(dates.query)
   const redeem = useRedeemReward()
   const [pendingRedeem, setPendingRedeem] = useState<LoyaltyReward | null>(null)
   const s = summary.data
   return {
+    dates,
     status, setStatus,
     rows: rewards.data ?? [],
     isLoading: rewards.isLoading,
@@ -59,7 +64,7 @@ export default function RewardsPage() {
   const page = useRewardsPage()
   const pending = page.pendingRedeem
   return <div className="space-y-5">
-    <PageHeading title="Reward centre" subtitle="Track unlocked, claimed, and expiring rewards."/>
+    <PageHeading title="Reward centre" subtitle="Track unlocked, claimed, and expiring rewards." actions={<DateRangeFilter value={page.dates.range} onChange={page.dates.setRange} placeholder="All time" className="w-full sm:w-56"/>}/>
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*:last-child:nth-child(odd)]:col-span-2 sm:[&>*:last-child:nth-child(odd)]:col-span-1">{page.summaryLoading ? Array.from({ length: 3 }, (_, index) => <MetricSkeleton key={index} dark={index === 0}/>) : page.metrics.map(metric => <Metric key={metric.label} {...metric}/>)}</div>
     <Chips options={FILTERS} value={page.status} onChange={page.setStatus}/>
     <Card className="overflow-hidden">

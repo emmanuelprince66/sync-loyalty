@@ -1,3 +1,5 @@
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
+import { useApiDateRange } from '@/hooks/useApiDateRange'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { ArrowLeft, Link2, Mail, MessageSquare, Plus, Search, Settings2, Target, Trophy, Users } from 'lucide-react'
@@ -28,7 +30,9 @@ export default function ReferralProgrammePage() {
   const programme = useReferralProgramme(programmeId)
   const [query, setQuery] = useState('')
   const search = useDebounce(query, 300)
-  const participants = useReferralParticipants(programmeId, search)
+  // Participants who joined in a chosen period (start_date / end_date).
+  const dates = useApiDateRange()
+  const participants = useReferralParticipants(programmeId, search, dates.query)
   const [showSettings, setShowSettings] = useState(false)
   const [adding, setAdding] = useState(false)
   const back = () => navigate(paths.referrals)
@@ -87,10 +91,13 @@ export default function ReferralProgrammePage() {
         <h3 className="text-sm font-black">Participants</h3>
         {canManageLoyalty && <MkButton onClick={() => setAdding(true)}><Plus size={14}/>Add participant</MkButton>}
       </div>
-      <label className="flex h-11 items-center gap-2 rounded-full bg-white px-4 ring-1 ring-black/10 focus-within:ring-black">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <DateRangeFilter value={dates.range} onChange={dates.setRange} placeholder="Joined any time" className="w-full sm:w-56"/>
+      <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full bg-white px-4 ring-1 ring-black/10 focus-within:ring-black">
         <Search size={14} className="shrink-0 text-black/45"/>
         <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search by name or code..." aria-label="Search participants" className="w-full min-w-0 bg-transparent text-xs outline-none"/>
       </label>
+      </div>
 
       {participants.isError ? <Card><ErrorBlock text="We couldn’t load the participants." onRetry={() => { void participants.refetch() }}/></Card>
         : participants.isLoading ? <CardGridSkeleton count={3} gridClassName="grid grid-cols-[minmax(0,1fr)] gap-3" avatar footer={3}/>

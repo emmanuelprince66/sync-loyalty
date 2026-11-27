@@ -1,3 +1,5 @@
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
+import { useApiDateRange } from '@/hooks/useApiDateRange'
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { useLoyaltyMembers } from '@/api/loyalty'
@@ -13,7 +15,9 @@ const birthdayLabel = (value: string) => {
 /** sink's LoyaltyMembers: everyone in a programme (GET loyalty/members/{business_id}/), searchable by name, phone or referral code. */
 export function MembersTab() {
   const money = useFormatMoney()
-  const members = useLoyaltyMembers()
+  // Members who joined in a chosen period (loyalty/members start_date / end_date).
+  const dates = useApiDateRange()
+  const members = useLoyaltyMembers(dates.query)
   const [query, setQuery] = useState('')
   const term = query.trim().toLowerCase()
   const rows = useMemo(() => (members.data ?? []).filter(member => !term || [member.name, member.phone, member.referralCode].some(value => value.toLowerCase().includes(term))), [members.data, term])
@@ -21,7 +25,10 @@ export function MembersTab() {
   return <Card className="overflow-hidden">
     <div className="flex flex-col justify-between gap-3 border-b border-black/10 p-4 sm:flex-row sm:items-center sm:p-5">
       <div><h3 className="text-sm font-black">Members</h3><p className="mt-1 text-[11px] text-black/45">{members.isLoading ? 'Loading…' : `${(members.data ?? []).length.toLocaleString()} in your programs`}</p></div>
+      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+      <DateRangeFilter value={dates.range} onChange={dates.setRange} placeholder="Joined any time" className="w-full sm:w-52"/>
       <label className="flex h-10 w-full items-center gap-2 rounded-full bg-[#F1F1ED] px-4 sm:w-72"><Search size={14} className="shrink-0 text-black/45"/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Name, phone or referral code" aria-label="Search members" className="w-full bg-transparent text-xs outline-none"/></label>
+      </div>
     </div>
     {members.isError ? <ErrorBlock text="We couldn’t load your members." onRetry={() => { void members.refetch() }}/>
       : members.isLoading ? <TableSkeleton rows={6} columns={[{ thumbnail: true, flex: true, twoLine: true }, { pill: true, hiddenOnMobile: true }, { width: 'w-12', hiddenOnMobile: true }, { width: 'w-20' }, { width: 'w-16', hiddenOnMobile: true }]}/>

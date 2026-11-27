@@ -1,3 +1,4 @@
+import { withDates, type ApiDateRange } from './http'
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { apiRequest } from '@/lib/api-client'
 import { requireBusinessId, useCurrentBusinessId } from './business'
@@ -213,13 +214,13 @@ const mapWallet = (value: unknown): MemberWallet => {
 
 // ─── Programmes ───────────────────────────────────────────────────────────
 
-const getPrograms = async (scope: string): Promise<LoyaltyProgram[]> => {
-  return listFrom(await apiRequest<unknown>(`loyalty/programs/${scope}/`), ['results', 'data', 'results.data']).map(mapProgram)
+const getPrograms = async (scope: string, range: ApiDateRange = {}): Promise<LoyaltyProgram[]> => {
+  return listFrom(await apiRequest<unknown>(withDates(`loyalty/programs/${scope}/`, range)), ['results', 'data', 'results.data']).map(mapProgram)
 }
 
-export const usePrograms = () => {
+export const usePrograms = (range: ApiDateRange = {}) => {
   const { scope, enabled } = useScope()
-  return useQuery({ queryKey: [...loyaltyKeys.all, 'programs', scope], queryFn: () => getPrograms(scope), enabled })
+  return useQuery({ queryKey: [...loyaltyKeys.all, 'programs', scope, range.startDate ?? '', range.endDate ?? ''], queryFn: () => getPrograms(scope, range), enabled, placeholderData: keepPreviousData })
 }
 
 /** One participant row from the detail's `participants` (sink's ParticipantsTab). */
@@ -266,13 +267,14 @@ export const useProgram = (id: string | undefined) => useQuery({ ...programQuery
 /** The detail on demand (cached if already loaded): the list carries no join token, so Landing page reads it from here, as sink does. */
 export const fetchProgram = (client: QueryClient, id: string) => client.ensureQueryData(programQuery(id))
 
-const getEnrollments = async (id: string): Promise<ProgramMember[]> => {
-  return listFrom(await apiRequest<unknown>(`loyalty/programs/${id}/enrollments/`), ['results', 'data', 'results.data']).map(mapMember)
+const getEnrollments = async (id: string, range: ApiDateRange = {}): Promise<ProgramMember[]> => {
+  return listFrom(await apiRequest<unknown>(withDates(`loyalty/programs/${id}/enrollments/`, range)), ['results', 'data', 'results.data']).map(mapMember)
 }
 
-export const useEnrollments = (id: string | undefined) => useQuery({
-  queryKey: [...loyaltyKeys.all, 'enrollments', id],
-  queryFn: () => getEnrollments(id as string),
+export const useEnrollments = (id: string | undefined, range: ApiDateRange = {}) => useQuery({
+  queryKey: [...loyaltyKeys.all, 'enrollments', id, range.startDate ?? '', range.endDate ?? ''],
+  queryFn: () => getEnrollments(id as string, range),
+  placeholderData: keepPreviousData,
   enabled: Boolean(id),
 })
 
@@ -451,8 +453,8 @@ export const useDeleteBonusPeriod = () => useMutation({ mutationFn: deleteBonusP
 
 // ─── Dashboard and members ────────────────────────────────────────────────
 
-const getDashboard = async (scope: string): Promise<LoyaltyDashboard> => {
-  const raw = asRecord(await apiRequest<unknown>(`loyalty/dashboard/${scope}/`))
+const getDashboard = async (scope: string, range: ApiDateRange = {}): Promise<LoyaltyDashboard> => {
+  const raw = asRecord(await apiRequest<unknown>(withDates(`loyalty/dashboard/${scope}/`, range)))
   const d = asRecord(raw.data ?? raw)
   return {
     members: num(d.members ?? d.total_participants),
@@ -472,9 +474,9 @@ const getDashboard = async (scope: string): Promise<LoyaltyDashboard> => {
   }
 }
 
-export const useLoyaltyDashboard = () => {
+export const useLoyaltyDashboard = (range: ApiDateRange = {}) => {
   const { scope, enabled } = useScope()
-  return useQuery({ queryKey: [...loyaltyKeys.all, 'dashboard', scope], queryFn: () => getDashboard(scope), enabled })
+  return useQuery({ queryKey: [...loyaltyKeys.all, 'dashboard', scope, range.startDate ?? '', range.endDate ?? ''], queryFn: () => getDashboard(scope, range), enabled, placeholderData: keepPreviousData })
 }
 
 const getLoyaltyCustomers = async (scope: string, search: string): Promise<LoyaltyCustomer[]> => {
@@ -494,20 +496,20 @@ export const useLoyaltyCustomers = (search = '') => {
 
 // ─── Rewards ──────────────────────────────────────────────────────────────
 
-const getRewards = async (scope: string, status: RewardStatus | ''): Promise<LoyaltyReward[]> => {
-  return listFrom(await apiRequest<unknown>(`loyalty/rewards/${scope}/${status ? `?status=${status}` : ''}`), ['results', 'data', 'results.data']).map(mapReward)
+const getRewards = async (scope: string, status: RewardStatus | '', range: ApiDateRange = {}): Promise<LoyaltyReward[]> => {
+  return listFrom(await apiRequest<unknown>(withDates(`loyalty/rewards/${scope}/${status ? `?status=${status}` : ''}`, range)), ['results', 'data', 'results.data']).map(mapReward)
 }
 
-export const useRewards = (status: RewardStatus | '' = '') => {
+export const useRewards = (status: RewardStatus | '' = '', range: ApiDateRange = {}) => {
   const { scope, enabled } = useScope()
-  return useQuery({ queryKey: [...loyaltyKeys.all, 'rewards', scope, status], queryFn: () => getRewards(scope, status), enabled, placeholderData: keepPreviousData })
+  return useQuery({ queryKey: [...loyaltyKeys.all, 'rewards', scope, status, range.startDate ?? '', range.endDate ?? ''], queryFn: () => getRewards(scope, status, range), enabled, placeholderData: keepPreviousData })
 }
 
 export type ProgramBreakdown = { id: string; name: string; trigger: string; reward: string; sent: number; redeemed: number; cancelled: number; retention: number }
 export type RewardsSummary = { sent: number; redeemed: number; cancelled: number; retainedRevenue: number; roi: number; retention: number; programs: ProgramBreakdown[] }
 
-const getRewardsSummary = async (scope: string): Promise<RewardsSummary> => {
-  const raw = asRecord(await apiRequest<unknown>(`loyalty/rewards/analytics/${scope}/`))
+const getRewardsSummary = async (scope: string, range: ApiDateRange = {}): Promise<RewardsSummary> => {
+  const raw = asRecord(await apiRequest<unknown>(withDates(`loyalty/rewards/analytics/${scope}/`, range)))
   const root = asRecord(raw.data ?? raw)
   const s = asRecord(root.summary)
   // sink's CustomerRewards: per_campaign_breakdown, one row per programme.
@@ -518,9 +520,9 @@ const getRewardsSummary = async (scope: string): Promise<RewardsSummary> => {
   return { sent: num(s.total_sent), redeemed: num(s.total_redeemed), cancelled: num(s.cancelled), retainedRevenue: num(s.est_retained_rev), roi: num(s.overall_roi_percentage), retention: num(s.avg_retention_rate), programs }
 }
 
-export const useRewardsSummary = () => {
+export const useRewardsSummary = (range: ApiDateRange = {}) => {
   const { scope, enabled } = useScope()
-  return useQuery({ queryKey: [...loyaltyKeys.all, 'rewards-summary', scope], queryFn: () => getRewardsSummary(scope), enabled })
+  return useQuery({ queryKey: [...loyaltyKeys.all, 'rewards-summary', scope, range.startDate ?? '', range.endDate ?? ''], queryFn: () => getRewardsSummary(scope, range), enabled, placeholderData: keepPreviousData })
 }
 
 /** Staff redeems an issued reward; the loyalty code must match the reward's owner (the backend's anti-fraud check). */
@@ -625,11 +627,11 @@ export const useRewardItems = (type: 'PRODUCT' | 'SERVICE', search: string, enab
 
 export type LoyaltyMemberRow = { id: string; name: string; phone: string; referralCode: string; tier: string; visits: number; spend: number; birthday: string; gender: string; joinedAt: string }
 
-export const useLoyaltyMembers = () => {
+export const useLoyaltyMembers = (range: ApiDateRange = {}) => {
   const { scope, enabled } = useScope()
   return useQuery({
-    queryKey: [...loyaltyKeys.all, 'members', scope],
-    queryFn: async () => listFrom(await apiRequest<unknown>(`loyalty/members/${scope}/`), ['results', 'data', 'results.data']).map((value): LoyaltyMemberRow => {
+    queryKey: [...loyaltyKeys.all, 'members', scope, range.startDate ?? '', range.endDate ?? ''],
+    queryFn: async () => listFrom(await apiRequest<unknown>(withDates(`loyalty/members/${scope}/`, range)), ['results', 'data', 'results.data']).map((value): LoyaltyMemberRow => {
       const m = asRecord(value)
       return { id: str(m.id), name: str(m.name), phone: str(m.phone), referralCode: str(m.referral_code), tier: str(m.tier_name), visits: num(m.total_visits), spend: num(m.total_spend), birthday: str(m.birthday), gender: str(m.gender), joinedAt: str(m.joined_at) }
     }),

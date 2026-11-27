@@ -1,3 +1,4 @@
+import { useApiDateRange } from '@/hooks/useApiDateRange'
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -29,7 +30,9 @@ export function useProgramDetail() {
   const { canManageLoyalty } = usePermissions()
   const detail = useProgram(programId)
   const business = useCurrentBusiness()
-  const members = useEnrollments(programId)
+  // Members who joined in a chosen period (enrollments start_date / end_date).
+  const memberDates = useApiDateRange()
+  const members = useEnrollments(programId, memberDates.query)
   const qr = useProgramQr(programId)
   const update = useUpdateProgram()
   const remove = useDeleteProgram()
@@ -56,6 +59,7 @@ export function useProgramDetail() {
   })
 
   return {
+    memberDates,
     programId,
     isLoading: detail.isLoading,
     isError: detail.isError,
